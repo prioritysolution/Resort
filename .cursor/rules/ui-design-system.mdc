@@ -1,43 +1,47 @@
 ---
-description: Same page shell, colors, and form/table styles on every screen. Apply when building or restyling UI.
+description: Innap hotel admin visual tokens and chrome. Apply when building or restyling UI. Source of truth also in INNAP_DESIGN_SYSTEM_FOR_NEXTJS.txt.
 alwaysApply: true
 ---
 
-# PrioSuite — same design on every page
+# Innap — design system (hotel admin)
 
-Do not invent a new layout. Copy the nearest existing screen in the same domain.
+Tokens live in `INNAP_DESIGN_SYSTEM_FOR_NEXTJS.txt` and `app/globals.css`. Do not invent a new palette.
 
-## Page shell (required for form / master / report / transaction screens)
+## Brand tokens
+
+- Primary `#1362FC` · hover `#034bd9` · secondary `#627EEA`
+- Page BG `#f5f5f5` · chrome BG `#FCFCFC` · border `#F2F2F2`
+- Text title `#000` · muted `#969ba0` · header icons `#464a53`
+- Success `#37D159` · warning `#FFC368` · danger `#FF6746` · info `#b48dd3`
+- Radius `0.625rem` (10px)
+- Fonts: Roboto (UI) · Poppins (headings / charts) via `font-sans` / `font-display`
+- Sidebar width `20.5rem` · header height `--header-height` (5.5rem)
+
+## Chrome
+
+- Sidebar + header: light `#FCFCFC` (`bg-chrome`), active menu `bg-primary` white text
+- Content: `bg-background` (`#f5f5f5`) with Section 5 padding (`lg:px-10 lg:pt-9`)
+- Footer: `#f5f5f5`, text `0.8125rem`
+- Dark mode: body `#212529`, chrome `#2a2e32` — keep primary blue
+
+## Page shell (forms / masters / reports)
+
+Keep architecture (`page` → `container` → `Hooks`/`Apis` → `components`). For form screens use soft Innap card shell inline (do not add `components/shared` wrappers):
 
 ```jsx
-<div className="w-full h-full flex justify-between p-1 bg-[#fefefe] rounded-lg">
-  <div className="h-full flex flex-col justify-start items-center border-primary rounded-lg border-[2px] p-2 lg:p-5 w-full gap-3 overflow-hidden">
-    <h3 className="text-2xl font-semibold">Page Title</h3>
-    <ScrollArea className="w-full h-full">
-      {/* sections */}
-    </ScrollArea>
-  </div>
+<div className="flex h-full w-full flex-col gap-4 rounded-[0.625rem] border border-border bg-card p-4 sm:p-5">
+  <h1 className="font-display text-2xl font-semibold">Page Title</h1>
+  {/* sections */}
 </div>
 ```
 
-- Inner sections: `border border-primary rounded-lg p-3 sm:p-5`
-- Section title: `text-center text-lg sm:text-xl font-semibold`
-- Fields grid: `grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-10 gap-y-3`
-- Submit: `<Button type="submit" className="w-full sm:w-1/5 self-end">` with `ClipLoader color="#d7e6f4"`
-- Required labels: red `*` via `isRequired`
-- Forms: `autoComplete="off"`; buttons inside forms `type="button"` unless submit
+- Sections: `border border-border rounded-[0.625rem] p-3 sm:p-5`
+- Fields: `common/formFields` only · `h-10 rounded-[0.625rem]`
+- Tables: `components/ui/table` + soft border
+- Dashboard home: KPI gradient cards (`innap-gradient-1`…`4`) — no form shell
 
-## Chrome (do not restyle)
+## Do not
 
-- Font: Open Sans · radius `0.5rem` · primary `hsl(219 94% 20%)`
-- Sidebar + footer: `#00264D` · content area: `bg-gray-50` · page card: `#fefefe`
-- Fields: `h-10 rounded-md` via `common/formFields` only
-- Tables: `components/ui/table` + `border border-primary`
-- Success: `common/dialog/SuccessMessage` · toasts top-right
-- Loading: `ClipLoader` / `Skeleton` with `bg-secondary`
-
-## Exceptions
-
-- Login / branded auth: keep existing login layout
-- Dashboard home: `bg-slate-50` + cards — do not force the 2px primary shell
-- Do not use MUI as default; Ant Design only on screens that already use it
+- Revert to navy `#00264D` / teal `#14B8A6` chrome
+- Put business logic in `app/` pages or presentational components
+- Hardcode API base URLs

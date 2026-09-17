@@ -1,0 +1,209 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { FiChevronDown } from "react-icons/fi";
+import { cn } from "@/lib/utils";
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import IconDisplay from "@/common/IconDisplay";
+import getCookieData from "@/utils/getCookieData";
+
+const NavMain = ({ items = [], loading = false }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const endDate = getCookieData("fin_end_date");
+  const { state, setOpen, isMobile, setOpenMobile } = useSidebar();
+  const isSidebarActive = state === "expanded" || isMobile;
+  const [expandedLink, setExpandedLink] = useState("");
+
+  useEffect(() => {
+    if (!isSidebarActive) {
+      setExpandedLink("");
+      return;
+    }
+
+    const activeParent = items.find((link) =>
+      link.childLinks?.some((c) => c.Page_Allies === pathname),
+    );
+    if (activeParent?.childLinks?.length) {
+      setExpandedLink(activeParent.title);
+    }
+  }, [pathname, items, isSidebarActive]);
+
+  const handleExpandedLink = (title) => {
+    setExpandedLink((prev) => (prev !== title ? title : ""));
+  };
+
+  const openSidebarIfNeeded = () => {
+    if (isMobile) {
+      setOpenMobile(true);
+      return;
+    }
+    if (!isSidebarActive) setOpen(true);
+  };
+
+  if (loading || !items.length) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-chrome-muted">
+          Menu
+        </SidebarGroupLabel>
+        <SidebarMenu>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <SidebarMenuItem key={i}>
+              <SidebarMenuSkeleton showIcon />
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroup>
+    );
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-chrome-muted">Menu</SidebarGroupLabel>
+      <SidebarMenu className="gap-[5px]">
+        {items.map((link) => {
+          const hasChildren = link.childLinks?.length > 0;
+          const isActive =
+            link.path === pathname ||
+            link.childLinks?.some((c) => c.Page_Allies === pathname);
+          const isExpanded = isSidebarActive && expandedLink === link.title;
+          const iconSet = String(link.Icon || "Md")
+            .slice(0, 2)
+            .toLowerCase();
+
+          return (
+            <SidebarMenuItem key={link.title}>
+              <SidebarMenuButton
+                type="button"
+                tooltip={link.title}
+                isActive={isActive}
+                className={cn(
+                  "h-10 cursor-pointer rounded-[0.625rem] border-0 px-3 shadow-none",
+                  "transition-all duration-200 ease-out active:scale-[0.98]",
+                  isActive
+                    ? "bg-primary text-white hover:bg-primary hover:text-white data-active:bg-primary data-active:text-white"
+                    : "bg-transparent text-chrome-foreground hover:bg-primary/10 hover:text-primary",
+                )}
+                onClick={() => {
+                  if (hasChildren) {
+                    if (!isSidebarActive) {
+                      openSidebarIfNeeded();
+                      setExpandedLink(link.title);
+                      return;
+                    }
+                    handleExpandedLink(link.title);
+                    return;
+                  }
+                  setExpandedLink("");
+                  if (link.path) router.replace(link.path);
+                }}
+              >
+                <span
+                  className={cn(
+                    "text-[1.3rem] transition-colors duration-200",
+                    isActive ? "text-white" : "text-chrome-muted",
+                  )}
+                >
+                  <IconDisplay iconName={link.Icon} iconSet={iconSet} />
+                </span>
+                <span className="truncate text-[0.9375rem]">{link.title}</span>
+                {hasChildren && isSidebarActive ? (
+                  <span
+                    className={cn(
+                      "ml-auto shrink-0 transition-transform duration-300 ease-out",
+                      isActive ? "text-white" : "text-chrome-muted",
+                      isExpanded ? "rotate-180" : "rotate-0",
+                    )}
+                  >
+                    <FiChevronDown className="size-4" />
+                  </span>
+                ) : null}
+              </SidebarMenuButton>
+
+              {hasChildren ? (
+                <div
+                  className={cn(
+                    "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
+                    isExpanded && isSidebarActive
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0",
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <SidebarMenuSub className="mx-0 mb-1 w-full min-w-0 translate-x-0 gap-0.5 border-0 px-0 py-1">
+                      {link.childLinks.map((item) => {
+                        const isHidden =
+                          item.Page_Allies === "/voucher/adjustmentVoucher" &&
+                          endDate &&
+                          new Date(endDate) > new Date();
+                        if (isHidden) return null;
+
+                        const isChildActive = item.Page_Allies === pathname;
+
+                        return (
+                          <SidebarMenuSubItem
+                            key={item.Menue_Name}
+                            className="w-full"
+                          >
+                            <SidebarMenuSubButton
+                              isActive={isChildActive}
+                              render={<button type="button" />}
+                              onClick={() => {
+                                if (item.Page_Allies) {
+                                  router.push(item.Page_Allies);
+                                }
+                              }}
+                              className={cn(
+                                "group/sub flex h-auto w-full min-w-0 translate-x-0 cursor-pointer items-center gap-2.5 rounded-md py-2 pr-8 pl-9 text-left shadow-none",
+                                "transition-all duration-200 ease-out hover:bg-primary/5",
+                                isChildActive
+                                  ? "bg-transparent text-primary"
+                                  : "bg-transparent text-chrome-muted hover:text-primary",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "h-[1.5px] shrink-0 rounded-full transition-all duration-300 ease-out",
+                                  isChildActive
+                                    ? "w-4 bg-primary"
+                                    : "w-2.5 bg-chrome-muted/50 group-hover/sub:w-4 group-hover/sub:bg-primary/50",
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  "w-full truncate text-[13.5px] tracking-wide transition-all duration-200",
+                                  isChildActive && "font-semibold",
+                                )}
+                              >
+                                {item.Menue_Name}
+                              </span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </div>
+                </div>
+              ) : null}
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
+export default NavMain;

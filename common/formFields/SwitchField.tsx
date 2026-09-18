@@ -1,6 +1,10 @@
 "use client";
 
-import { type Control } from "react-hook-form";
+import {
+  type Control,
+  type FieldValues,
+  type Path,
+} from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -10,19 +14,19 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 
-interface SwitchFieldProps {
-  control: Control<any>;
-  name: string;
+interface SwitchFieldProps<T extends FieldValues> {
+  control: Control<T>;
+  name: Path<T>;
   label: string;
   description?: string;
 }
 
-const SwitchField = ({
+const SwitchField = <T extends FieldValues>({
   control,
   name,
   label,
   description,
-}: SwitchFieldProps) => {
+}: SwitchFieldProps<T>) => {
   return (
     <FormField
       control={control}

@@ -1,5 +1,5 @@
 ---
-description: Innap hotel admin visual tokens and chrome. Apply when building or restyling UI. Source of truth also in INNAP_DESIGN_SYSTEM_FOR_NEXTJS.txt.
+description: Innap hotel admin visual tokens and chrome. Apply when building or restyling UI.
 alwaysApply: true
 ---
 
@@ -20,28 +20,38 @@ Tokens live in `INNAP_DESIGN_SYSTEM_FOR_NEXTJS.txt` and `app/globals.css`. Do no
 ## Chrome
 
 - Sidebar + header: light `#FCFCFC` (`bg-chrome`), active menu `bg-primary` white text
-- Content: `bg-background` (`#f5f5f5`) with Section 5 padding (`lg:px-10 lg:pt-9`)
-- Footer: `#f5f5f5`, text `0.8125rem`
+- Content: `bg-background` (`#f5f5f5`)
 - Dark mode: body `#212529`, chrome `#2a2e32` — keep primary blue
 
-## Page shell (forms / masters / reports)
+## Page shell (required on dashboard screens)
 
-Keep architecture (`page` → `container` → `Hooks`/`Apis` → `components`). For form screens use soft Innap card shell inline (do not add `components/shared` wrappers):
+```tsx
+import {
+  PageHeader,
+  PageSection,
+  PageShell,
+  PageShellContent,
+} from "@/components/shared";
 
-```jsx
-<div className="flex h-full w-full flex-col gap-4 rounded-[0.625rem] border border-border bg-card p-4 sm:p-5">
-  <h1 className="font-display text-2xl font-semibold">Page Title</h1>
-  {/* sections */}
-</div>
+<PageShell className="h-full">
+  <PageHeader title="Page Title" description="..." />
+  <PageShellContent>
+    <PageSection title="Section">{/* fields / tables */}</PageSection>
+  </PageShellContent>
+</PageShell>
 ```
 
-- Sections: `border border-border rounded-[0.625rem] p-3 sm:p-5`
-- Fields: `common/formFields` only · `h-10 rounded-[0.625rem]`
-- Tables: `components/ui/table` + soft border
-- Dashboard home: KPI gradient cards (`innap-gradient-1`…`4`) — no form shell
+- Dashboard home: `PageShell flush` + KPI cards; still use `PageHeader` / `PageSection`
+- Auth: `AuthShell` only (no PageShell)
+- Fields: `common/formFields` · `h-10 rounded-[0.625rem]`
+- Tables: `components/ui/table` + soft border; separate Toolbar / Table / Dialogs
+- Loading: shared `PageLoader` from `@/components/shared` (`page` | `section` | `inline` | `button`)
+- List/CRUD screens: `ListPageFrame` + `ListToolbar` + `EmptyState` (same chrome on every org page)
+- Page scrolling: shadcn `ScrollArea` via `PageShellContent` and table region in `ListPageFrame`
 
 ## Do not
 
-- Revert to navy `#00264D` / teal `#14B8A6` chrome
-- Put business logic in `app/` pages or presentational components
+- Navy `#00264D` / teal `#14B8A6` chrome
+- Hand-roll headers/sections instead of `components/shared`
+- Business logic in presentational components
 - Hardcode API base URLs

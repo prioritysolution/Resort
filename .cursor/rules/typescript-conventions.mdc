@@ -1,0 +1,35 @@
+---
+description: TypeScript conventions for Innap — types location, naming, no JS leftovers.
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# TypeScript conventions
+
+## Language
+
+- New code: `.ts` / `.tsx` only. Convert or delete leftover `.js` / `.jsx` when touching a feature.
+- Prefer explicit props types and `import type { ... }`.
+
+## Types location
+
+```
+container/<domain>/<feature>/types.ts   ← entity + FormValues + Payload
+types/api.ts                            ← ApiCudResponse, ApiListResponse only
+```
+
+- Same-folder imports: `./types`
+- Components import feature types from `@/container/.../types`
+- Cross-feature FK options: import the other feature’s types/API (e.g. room types for room-details dropdown)
+
+## Naming
+
+- API row shapes match Resort fields (`Room_TId`, `Category_Id`, …)
+- Form values use request body keys (`room_tname`, `categ_name`, …)
+- Components: `*Toolbar`, `*Table`, `*FormDialog`, `*DeleteDialog`
+
+## Do not
+
+- Reintroduce demoAuth / mock list arrays
+- Put feature types back into a single bloated `types/api.ts`
+- Use `any` unless bridging a third-party gap (prefer `unknown` + narrow)

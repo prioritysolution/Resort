@@ -1,37 +1,43 @@
 ---
+description: Forms, Resort API, cookies, Redux conventions for Innap containers.
+globs: container/**/*.{ts,tsx},utils/**/*.{ts,tsx},common/formFields/**/*.{ts,tsx}
 alwaysApply: false
 ---
+
 # Forms, API, Redux
 
 ## Forms
 
-- `react-hook-form` + `yup` + `yupResolver` live in `container/.../Hooks.js` only
-- Fields: `InputField`, `DropdownField`, `DatePickerField`, `TextareaField`, `RadioField` from `common/formFields`
-- Shared regex: `utils/validationRegex.js`
-- Dates: store as Date at **local noon** (`utils/dateHelpers.js`). API: `formatDateForApi`. Display: `dd-MM-yyyy`
-- Never `toISOString().slice(0, 10)` or `new Date("yyyy-MM-dd")` for calendar days
-- Calendar: `react-day-picker@8` only (not v9)
+- RHF + yup + `yupResolver` only in `container/.../Hooks.ts`
+- Fields from `common/formFields`: `InputField`, `DropdownField`, `DatePicker`, `TextareaField`, `SwitchField`
+- Shared regex: `utils/validationRegex.ts`
+- Types for forms/payloads: `container/.../types.ts` (not a giant global types dump)
 
 ## API
 
-```js
-// Apis.js — URLs from endPoints.js only
-export const getFooAPI = async (orgId) =>
-  doGetApiCall({ url: endPoints.getFoo(orgId) });
+```ts
+// *Apis.ts — URLs from endPoints.ts only
+export const getFooListAPI = () =>
+  doGetApiCall<ApiListResponse<Foo>>({ url: endPoints.fooList });
 
-// Hooks.js
-if (res.message === "Data Found" || res.message === "Success") {
-  dispatch(setData(res.details ?? res.Data));
+// Hooks.ts — Resort CUD / list shape
+if (res?.Error_Code === 0 || res?.Message === "Success") {
+  setRows(Array.isArray(res.data) ? res.data : []);
 }
 ```
 
-- Base URL: `process.env.NEXT_PUBLIC_BASE_API_URL`
-- Do not call axios from components or pages
-- Token cookie: `prioBankClientToken`. Also: `orgId`, `userBranchId`, `finId`, `beg_date`, `fin_start_date`, `fin_end_date`
+- Base: `process.env.NEXT_PUBLIC_BASE_API_URL`
+- No axios in components or `app/` pages
+- List/search/add/update/delete mirror `test` (Resort API docs)
+
+## Auth cookies (`resort*`)
+
+Set on login (`container/auth/login/Hooks.ts`): `resortToken`, `resortTokenType`, `resortUserId`, `resortOrgId`, `resortBranchId`, `resortUserName`, `resortShortName`, `resortUserCode`, `resortIsActive`, `resortStatus`, `resortBranchCode`, `resortBranchName`, `resortName`, `resortOrgSchema`, `resortDatabaseName`.
+
+Clear via `clearAuthCookies()` in `utils/secureCookieHelper.ts`.
 
 ## Redux
 
-- One slice per feature in `container/.../*Reducer.js`
-- Register in `redux/configureStore.js`
-- Read with `useSelector((state) => state.sliceKey…)`
-- Do not store full form drafts in Redux unless that feature already does
+- Slice in `container/.../*Reducer.ts`; register in `redux/configureStore.ts`
+- Sidebar menus from API → `setSidebarData` (never ship static menu arrays)
+- Do not store full form drafts in Redux unless the feature already does

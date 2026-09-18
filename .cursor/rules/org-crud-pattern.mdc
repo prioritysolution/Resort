@@ -1,0 +1,34 @@
+---
+description: Org CRUD screen pattern — list/search/dialogs against Resort endpoints.
+globs: "**/org/**/*.{ts,tsx},container/org/**/*.{ts,tsx},components/org/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Org feature CRUD pattern
+
+Mirror `container/org/roomType` + `components/org/roomType`.
+
+## Container
+
+- `*Apis.ts`: list, search, add, update, delete via `endPoints`
+- `Hooks.ts`: load list, debounced search (~350ms), create/edit dialog, delete confirm, toast + `SuccessMessage`
+- `types.ts`: row + form + payload
+- `index.tsx`: wire hook → view
+
+## Components
+
+- `index.tsx`: PageShell / PageHeader / PageSection
+- `*Toolbar.tsx`: search + refresh + add
+- `*Table.tsx`: responsive table, loading skeletons, empty state, edit/delete actions
+- `*FormDialog.tsx`: RHF fields; `SwitchField` status on edit when API supports it
+- `*DeleteDialog.tsx`: confirm soft/hard delete per API docs
+
+## Data
+
+- Rows only from API `data[]` — never demo seed rows
+- Success: `Error_Code === 0` (or documented Success message)
+- FK dropdowns: load master list from related `*Apis` (e.g. `getRoomTypeListAPI`)
+
+## Routes
+
+Org paths match API menus (`/org/room-type`, `/org/menu-category`, …). Unbuilt routes stay on catch-all Coming Soon.

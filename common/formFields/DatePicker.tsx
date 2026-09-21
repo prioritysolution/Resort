@@ -41,6 +41,7 @@ interface DatePickerProps<T extends FieldValues> {
   picker?: "date" | "month" | "year";
   isRequired?: boolean;
   disablePastAndFuture?: boolean;
+  disablePast?: boolean;
   disableFuture?: boolean;
   disableBeforeStartDate?: boolean;
   showCurrentDate?: boolean;
@@ -60,6 +61,7 @@ export function DatePicker<T extends FieldValues>({
   allowClear = true,
   isRequired = false,
   disablePastAndFuture = false,
+  disablePast = false,
   disableFuture = false,
   disableBeforeStartDate = false,
   showCurrentDate = false,
@@ -125,6 +127,7 @@ export function DatePicker<T extends FieldValues>({
     const today = startOfDay(new Date());
     const target = startOfDay(d);
 
+    if (disablePast && isBefore(target, today)) return true;
     if (disableFuture && isAfter(target, today)) return true;
     if (
       disablePastAndFuture &&

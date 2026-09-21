@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { format, isValid } from "date-fns";
+import { addDays, format, isValid } from "date-fns";
 import { useGuestCrud } from "@/container/guest/shared/useGuestCrud";
 import { getRoomTypeListAPI } from "@/container/org/roomType/RoomTypeApis";
 import { getTravelAgentListAPI } from "@/container/org/travelAgent/TravelAgentApis";
@@ -23,6 +23,13 @@ const toApiDate = (value: Date | string | null | undefined) => {
   }
   const parsed = new Date(value);
   return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : String(value);
+};
+
+const parseDate = (value: Date | string | null | undefined) => {
+  if (!value) return null;
+  if (value instanceof Date) return isValid(value) ? value : null;
+  const parsed = new Date(value);
+  return isValid(parsed) ? parsed : null;
 };
 
 const emptyValues: BookingFormValues = {
@@ -70,6 +77,22 @@ export function useBooking() {
     resolver: yupResolver(schema) as unknown as Resolver<BookingFormValues>,
     defaultValues: emptyValues,
   });
+
+  const checkinDate = form.watch("checkin_date");
+  const stayDuration = form.watch("stay_duration");
+
+  useEffect(() => {
+    const checkin = parseDate(checkinDate);
+    const nights = Number(stayDuration);
+    if (!checkin || !Number.isFinite(nights) || nights < 1) {
+      form.setValue("exp_chkout_dt", "", { shouldValidate: false });
+      return;
+    }
+    const checkout = addDays(checkin, nights);
+    checkout.setHours(12, 0, 0, 0);
+    form.setValue("exp_chkout_dt", checkout, { shouldValidate: false });
+  }, [checkinDate, stayDuration, form]);
+
   const [roomTypes, setRoomTypes] = useState<
     Array<{ Id: number; Name: string }>
   >([]);
@@ -112,10 +135,15 @@ export function useBooking() {
       exp_chkout_dt: row.ExpChkOut_Dt || row.Exp_Chkout_Dt || "",
       agent_id: row.Agent_Id || "",
       note: row.Note || "",
-      advance_amount: row.Advance_Amount ?? "",
-      advance_mode: Number(row.Advance_Mode) || 1,
+      advance_amount:
+        row.Adv_Amount ?? row.advance_amount ?? row.Advance_Amount ?? "",
+      advance_mode:
+        Number(row.Adv_Mode ?? row.advance_mode ?? row.Advance_Mode) || 1,
       is_refundable: Boolean(
-        row.Is_Refundable === true || Number(row.Is_Refundable) === 1,
+        row.Is_Refundable === true ||
+          Number(row.Is_Refundable) === 1 ||
+          row.is_refundable === true ||
+          Number(row.is_refundable) === 1,
       ),
     }),
     toPayload: (v) => {
@@ -123,16 +151,21 @@ export function useBooking() {
         v.advance_amount === "" || v.advance_amount == null
           ? undefined
           : Number(v.advance_amount);
-      const checkinDate = toApiDate(v.checkin_date);
-      const expChkoutDt = toApiDate(v.exp_chkout_dt);
+      const checkin = toApiDate(v.checkin_date);
+      const nights = Number(v.stay_duration);
+      const parsedCheckin = parseDate(v.checkin_date);
+      const derivedCheckout =
+        parsedCheckin && Number.isFinite(nights) && nights >= 1
+          ? toApiDate(addDays(parsedCheckin, nights))
+          : toApiDate(v.exp_chkout_dt);
       return {
         guest_name: v.guest_name.trim(),
         contact_no: v.contact_no.trim(),
         room_tid: Number(v.room_tid),
         no_of_room: Number(v.no_of_room),
-        checkin_date: checkinDate,
-        stay_duration: Number(v.stay_duration),
-        ...(expChkoutDt ? { exp_chkout_dt: expChkoutDt } : {}),
+        checkin_date: checkin,
+        stay_duration: nights,
+        ...(derivedCheckout ? { exp_chkout_dt: derivedCheckout } : {}),
         agent_id: v.agent_id ? Number(v.agent_id) : null,
         ...(v.note.trim() ? { note: v.note.trim() } : {}),
         ...(advanceAmount != null && !Number.isNaN(advanceAmount)

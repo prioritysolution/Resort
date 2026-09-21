@@ -108,6 +108,7 @@ export default function BookingFormDialog({
                   label="Check-in date"
                   placeholder="Select check-in date"
                   isRequired
+                  disablePast
                 />
                 <InputField
                   control={form.control}
@@ -120,7 +121,9 @@ export default function BookingFormDialog({
                   control={form.control}
                   name="exp_chkout_dt"
                   label="Expected checkout"
-                  placeholder="Select expected checkout date"
+                  placeholder="Auto-filled from check-in + nights"
+                  disabled
+                  allowClear={false}
                 />
                 <DropdownField
                   control={form.control}

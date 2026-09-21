@@ -199,15 +199,15 @@ function Calendar(
                 defaultClassNames.day,
               ),
               today: cn(
-                "bg-accent text-accent-foreground font-bold",
+                "bg-primary/15 font-semibold text-primary",
                 defaultClassNames.today,
               ),
               outside: cn(
-                "text-muted-foreground opacity-50",
+                "text-muted-foreground opacity-70",
                 defaultClassNames.outside,
               ),
               disabled: cn(
-                "text-muted-foreground opacity-20",
+                "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-100",
                 defaultClassNames.disabled,
               ),
               ...classNames,
@@ -345,10 +345,12 @@ function CalendarDayButton({
       className={cn(
         "cursor-pointer relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal",
         modifiers.selected &&
-          "bg-blue-500 text-white hover:bg-blue-600 hover:text-white",
+          "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
         modifiers.today &&
           !modifiers.selected &&
-          "bg-accent text-accent-foreground",
+          "bg-primary/15 font-semibold text-primary hover:bg-primary/20 hover:text-primary",
+        modifiers.disabled &&
+          "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-100 hover:bg-muted/50 hover:text-muted-foreground",
         defaultClassNames.day,
         className,
       )}

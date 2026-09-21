@@ -21,9 +21,15 @@ export type Booking = {
   Agent_Id?: number | null;
   Agent_Name?: string | null;
   Note?: string | null;
+  /** API fields (list response) */
+  Adv_Amount?: number | string | null;
+  Adv_Mode?: number | string | null;
   Advance_Amount?: number | string | null;
   Advance_Mode?: number | string | null;
+  advance_amount?: number | string | null;
+  advance_mode?: number | string | null;
   Is_Refundable?: number | boolean | null;
+  is_refundable?: number | boolean | null;
   Status?: number | string;
   Created_By?: number;
   Created_At?: string;

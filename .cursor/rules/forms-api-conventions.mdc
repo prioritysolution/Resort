@@ -9,7 +9,7 @@ alwaysApply: false
 ## Forms
 
 - RHF + yup + `yupResolver` only in `container/.../Hooks.ts`
-- Fields from `common/formFields`: `InputField`, `DropdownField`, `DatePicker`, `TextareaField`, `SwitchField`
+- Fields from `common/formFields`: `InputField`, `DropdownField`, `DatePicker`, `TimePicker`, `TextareaField`, `SwitchField`
 - Shared regex: `utils/validationRegex.ts`
 - Types for forms/payloads: `container/.../types.ts` (not a giant global types dump)
 

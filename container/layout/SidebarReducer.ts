@@ -1,17 +1,19 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export type SidebarChildLink = {
-  Menue_Name: string;
-  Page_Allies: string;
-  SubMenu_Id?: number;
+  submenu_id: number;
+  submenu_name: string;
+  icon?: string | null;
+  route: string;
+  menu_sl?: number;
 };
 
 export type SidebarLink = {
-  title: string;
-  path: string;
-  Icon: string;
-  menuId: number;
-  childLinks: SidebarChildLink[];
+  menu_id: number;
+  menu_name: string;
+  icon: string;
+  route: string;
+  sub_menus: SidebarChildLink[];
 };
 
 export type SidebarState = {

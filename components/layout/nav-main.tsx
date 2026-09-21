@@ -6,7 +6,6 @@ import { FiChevronDown } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -38,10 +37,10 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
     }
 
     const activeParent = items.find((link) =>
-      link.childLinks?.some((c) => c.Page_Allies === pathname),
+      link.sub_menus?.some((c) => c.route === pathname),
     );
-    if (activeParent?.childLinks?.length) {
-      setExpandedLink(activeParent.title);
+    if (activeParent?.sub_menus?.length) {
+      setExpandedLink(activeParent.menu_name);
     }
   }, [pathname, items, isSidebarActive]);
 
@@ -60,9 +59,6 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
   if (loading || !items.length) {
     return (
       <SidebarGroup>
-        {/* <SidebarGroupLabel className="text-chrome-muted">
-          Menu
-        </SidebarGroupLabel> */}
         <SidebarMenu>
           {Array.from({ length: 7 }).map((_, i) => (
             <SidebarMenuItem key={i}>
@@ -76,23 +72,23 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
 
   return (
     <SidebarGroup>
-      {/* <SidebarGroupLabel className="text-chrome-muted">Menu</SidebarGroupLabel> */}
       <SidebarMenu className="gap-[5px]">
         {items.map((link) => {
-          const hasChildren = (link.childLinks?.length ?? 0) > 0;
+          const hasChildren = (link.sub_menus?.length ?? 0) > 0;
           const isActive =
-            link.path === pathname ||
-            link.childLinks?.some((c) => c.Page_Allies === pathname);
-          const isExpanded = isSidebarActive && expandedLink === link.title;
-          const iconSet = String(link.Icon || "Md")
+            link.route === pathname ||
+            link.sub_menus?.some((c) => c.route === pathname);
+          const isExpanded =
+            isSidebarActive && expandedLink === link.menu_name;
+          const iconSet = String(link.icon || "Md")
             .slice(0, 2)
             .toLowerCase();
 
           return (
-            <SidebarMenuItem key={link.title}>
+            <SidebarMenuItem key={link.menu_id}>
               <SidebarMenuButton
                 type="button"
-                tooltip={link.title}
+                tooltip={link.menu_name}
                 isActive={isActive}
                 className={cn(
                   "h-10 cursor-pointer rounded-[0.625rem] border-0 px-3 shadow-none",
@@ -105,14 +101,14 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
                   if (hasChildren) {
                     if (!isSidebarActive) {
                       openSidebarIfNeeded();
-                      setExpandedLink(link.title);
+                      setExpandedLink(link.menu_name);
                       return;
                     }
-                    handleExpandedLink(link.title);
+                    handleExpandedLink(link.menu_name);
                     return;
                   }
                   setExpandedLink("");
-                  if (link.path) router.replace(link.path);
+                  if (link.route) router.replace(link.route);
                 }}
               >
                 <span
@@ -121,9 +117,11 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
                     isActive ? "text-white" : "text-chrome-muted",
                   )}
                 >
-                  <IconDisplay iconName={link.Icon} iconSet={iconSet} />
+                  <IconDisplay iconName={link.icon} iconSet={iconSet} />
                 </span>
-                <span className="truncate text-[0.9375rem]">{link.title}</span>
+                <span className="truncate text-[0.9375rem]">
+                  {link.menu_name}
+                </span>
                 {hasChildren && isSidebarActive ? (
                   <span
                     className={cn(
@@ -148,20 +146,20 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
                 >
                   <div className="overflow-hidden">
                     <SidebarMenuSub className="mx-0 mb-1 w-full min-w-0 translate-x-0 gap-0.5 border-0 px-0 py-1">
-                      {link.childLinks.map((item) => {
-                        const isChildActive = item.Page_Allies === pathname;
+                      {link.sub_menus.map((item) => {
+                        const isChildActive = item.route === pathname;
 
                         return (
                           <SidebarMenuSubItem
-                            key={item.Menue_Name}
+                            key={`${link.menu_id}-${item.submenu_id}`}
                             className="w-full"
                           >
                             <SidebarMenuSubButton
                               isActive={isChildActive}
                               render={<button type="button" />}
                               onClick={() => {
-                                if (item.Page_Allies) {
-                                  router.push(item.Page_Allies);
+                                if (item.route) {
+                                  router.push(item.route);
                                 }
                               }}
                               className={cn(
@@ -188,7 +186,7 @@ const NavMain = ({ items = [], loading = false }: NavMainProps) => {
                                   isChildActive && "font-semibold",
                                 )}
                               >
-                                {item.Menue_Name}
+                                {item.submenu_name}
                               </span>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>

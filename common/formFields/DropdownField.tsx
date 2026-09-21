@@ -3,11 +3,14 @@
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useMemo,
   type ChangeEvent,
+  type CSSProperties,
   type KeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   type FieldValues,
   type Control,
@@ -66,8 +69,11 @@ const DropdownField = <T extends FieldValues>({
 }: DropdownProps<T>) => {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { field, fieldState } = useController({
     control,
@@ -178,11 +184,69 @@ const DropdownField = <T extends FieldValues>({
   }, [open, filteredOptions, value]);
 
   useEffect(() => {
-    const onDocClick = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false);
-        setSearchVal(getDisplayLabel(value));
+    setMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      const trigger = rootRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const viewportH = window.innerHeight;
+      const viewportW = window.innerWidth;
+      const gap = 4;
+      const menuMaxH = 240;
+      const spaceBelow = viewportH - rect.bottom - gap;
+      const spaceAbove = rect.top - gap;
+      const placeAbove =
+        spaceBelow < Math.min(menuMaxH, 160) && spaceAbove > spaceBelow;
+
+      const width = fixedDropdownWidth
+        ? Math.min(500, viewportW - 16)
+        : rect.width;
+
+      let left = rect.left;
+      if (left + width > viewportW - 8) {
+        left = Math.max(8, viewportW - width - 8);
       }
+
+      setMenuStyle({
+        position: "fixed",
+        left,
+        width,
+        zIndex: 200,
+        maxHeight: Math.min(
+          menuMaxH,
+          placeAbove ? spaceAbove : Math.max(spaceBelow, 120),
+        ),
+        ...(placeAbove
+          ? { bottom: viewportH - rect.top + gap }
+          : { top: rect.bottom + gap }),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, fixedDropdownWidth]);
+
+  useEffect(() => {
+    const onDocClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        rootRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+      setSearchVal(getDisplayLabel(value));
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -304,59 +368,61 @@ const DropdownField = <T extends FieldValues>({
             </button>
           </div>
 
-          {open && isInteractive ? (
-            <div
-              className={cn(
-                "absolute z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-md",
-                fixedDropdownWidth ? "w-[500px]" : "w-full",
-              )}
-            >
-              {filteredOptions.length === 0 ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  No results found
-                </div>
-              ) : (
-                filteredOptions.map((item, index) => {
-                  const itemVal = getItemId(item);
-                  const isSelected = String(value) === itemVal;
-                  const isHighlighted = activeIndex === index;
+          {open && isInteractive && mounted
+            ? createPortal(
+                <div
+                  ref={menuRef}
+                  style={menuStyle}
+                  className="overflow-y-auto rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                  {filteredOptions.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No results found
+                    </div>
+                  ) : (
+                    filteredOptions.map((item, index) => {
+                      const itemVal = getItemId(item);
+                      const isSelected = String(value) === itemVal;
+                      const isHighlighted = activeIndex === index;
 
-                  return (
-                    <button
-                      key={itemVal}
-                      type="button"
-                      ref={(el) => {
-                        if (el && isHighlighted) {
-                          el.scrollIntoView({
-                            behavior: "auto",
-                            block: "nearest",
-                          });
-                        }
-                      }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleSelectOption(item)}
-                      className={cn(
-                        "relative flex w-full cursor-pointer items-center rounded-lg py-2.5 pr-3.5 pl-8 text-left text-[14px] outline-none select-none",
-                        isSelected
-                          ? "bg-accent/40 font-medium text-accent-foreground"
-                          : "text-foreground",
-                        isHighlighted
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent/50",
-                      )}
-                    >
-                      {isSelected ? (
-                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                          <Check className="h-4 w-4" />
-                        </span>
-                      ) : null}
-                      {String(item?.[optionLabelKey] ?? "")}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          ) : null}
+                      return (
+                        <button
+                          key={itemVal}
+                          type="button"
+                          ref={(el) => {
+                            if (el && isHighlighted) {
+                              el.scrollIntoView({
+                                behavior: "auto",
+                                block: "nearest",
+                              });
+                            }
+                          }}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleSelectOption(item)}
+                          className={cn(
+                            "relative flex w-full cursor-pointer items-center rounded-lg py-2.5 pr-3.5 pl-8 text-left text-[14px] outline-none select-none",
+                            isSelected
+                              ? "bg-accent/40 font-medium text-accent-foreground"
+                              : "text-foreground",
+                            isHighlighted
+                              ? "bg-accent text-accent-foreground"
+                              : "hover:bg-accent/50",
+                          )}
+                        >
+                          {isSelected ? (
+                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                              <Check className="h-4 w-4" />
+                            </span>
+                          ) : null}
+                          {String(item?.[optionLabelKey] ?? "")}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>,
+                document.body,
+              )
+            : null}
         </div>
       </FormControl>
       {hint && !hasError ? (

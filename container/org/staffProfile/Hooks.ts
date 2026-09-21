@@ -121,13 +121,12 @@ export const useStaffProfile = () => {
   }, []);
 
   useEffect(() => {
-    void loadList();
-  }, [loadList]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadList(search.trim());
-    }, 350);
+    const timer = setTimeout(
+      () => {
+        void loadList(search.trim());
+      },
+      search.trim() ? 350 : 0,
+    );
     return () => clearTimeout(timer);
   }, [search, loadList]);
 

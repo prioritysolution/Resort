@@ -112,4 +112,77 @@ export const endPoints = {
     `${createApi}/price-manager/special/update/${id}`,
   specialRateDelete: (id: number | string) =>
     `${createApi}/price-manager/special/delete/${id}`,
+
+  // Booking
+  bookingList: `${createApi}/booking/list`,
+  bookingDetails: (bookingNo: string) =>
+    `${createApi}/booking/details/${encodeURIComponent(bookingNo)}`,
+  bookingAdd: `${createApi}/booking/add`,
+  bookingUpdate: (id: number | string) =>
+    `${createApi}/booking/update/${id}`,
+  bookingCancel: (id: number | string) =>
+    `${createApi}/booking/cancel/${id}`,
+
+  // Reservation
+  reservationList: (bookingNo?: string) =>
+    bookingNo
+      ? `${createApi}/reservation/list?booking_no=${encodeURIComponent(bookingNo)}`
+      : `${createApi}/reservation/list`,
+  reservationDetails: (reservationNo: string) =>
+    `${createApi}/reservation/details/${encodeURIComponent(reservationNo)}`,
+  reservationAdd: `${createApi}/reservation/add`,
+  reservationUpdate: (id: number | string) =>
+    `${createApi}/reservation/update/${id}`,
+
+  // Payment
+  paymentList: (reservationNo?: string) =>
+    reservationNo
+      ? `${createApi}/payment/list?reservation_no=${encodeURIComponent(reservationNo)}`
+      : `${createApi}/payment/list`,
+  paymentDetails: (id: number | string) =>
+    `${createApi}/payment/details/${id}`,
+  paymentAdd: `${createApi}/payment/add`,
+  paymentUpdate: (id: number | string) =>
+    `${createApi}/payment/update/${id}`,
+  paymentDelete: (id: number | string) =>
+    `${createApi}/payment/delete/${id}`,
+
+  // Food order
+  foodOrderList: (reservationNo?: string) =>
+    reservationNo
+      ? `${createApi}/food-order/list?reservation_no=${encodeURIComponent(reservationNo)}`
+      : `${createApi}/food-order/list`,
+  foodOrderDetails: (id: number | string) =>
+    `${createApi}/food-order/details/${id}`,
+  foodOrderAdd: `${createApi}/food-order/add`,
+  foodOrderUpdate: (id: number | string) =>
+    `${createApi}/food-order/update/${id}`,
+  foodOrderDelete: (id: number | string) =>
+    `${createApi}/food-order/delete/${id}`,
+
+  // Service order
+  serviceOrderList: (reservationNo?: string) =>
+    reservationNo
+      ? `${createApi}/service-order/list?reservation_no=${encodeURIComponent(reservationNo)}`
+      : `${createApi}/service-order/list`,
+  serviceOrderDetails: (id: number | string) =>
+    `${createApi}/service-order/details/${id}`,
+  serviceOrderAdd: `${createApi}/service-order/add`,
+  serviceOrderUpdate: (id: number | string) =>
+    `${createApi}/service-order/update/${id}`,
+  serviceOrderDelete: (id: number | string) =>
+    `${createApi}/service-order/delete/${id}`,
+
+  // Checkout
+  checkoutSummary: (reservationNo: string) =>
+    `${createApi}/checkout/summary?reservation_no=${encodeURIComponent(reservationNo)}`,
+  checkoutList: (reservationNo?: string) =>
+    reservationNo
+      ? `${createApi}/checkout/list?reservation_no=${encodeURIComponent(reservationNo)}`
+      : `${createApi}/checkout/list`,
+  checkoutDetails: (id: number | string) =>
+    `${createApi}/checkout/details/${id}`,
+  checkoutAdd: `${createApi}/checkout/add`,
+  checkoutDelete: (id: number | string) =>
+    `${createApi}/checkout/delete/${id}`,
 } as const;

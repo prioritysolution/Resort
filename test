@@ -1,0 +1,670 @@
+# Resort Frontend API
+
+Give this file to frontend. All paths are relative to the base URL.
+
+**Base URL:** `http://116.193.129.229:8092/api`
+
+---
+
+## How to call
+
+Always send **raw JSON**. Do not use `form-data` or `x-www-form-urlencoded`.
+
+```
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+`Authorization` is required on every route except `POST /login`.
+
+### Status codes
+
+| Code | Meaning |
+|---|---|
+| `200` | Success (list, details, update, delete) |
+| `201` | Created (add) |
+| `400` | Business error (`Error_Code: 1`) |
+| `401` | Missing or invalid token |
+| `404` | Record not found |
+| `422` | Validation error |
+
+### Success (create / update / delete)
+
+```json
+{
+  "Error_Code": 0,
+  "Message": "Reservation created successfully.",
+  "data": {}
+}
+```
+
+### Business error
+
+```json
+{
+  "Error_Code": 1,
+  "Message": "Room is already booked.",
+  "data": null
+}
+```
+
+If `Error_Code` is `1`, show `Message` to the user.
+
+### Validation error `422`
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "guest_name": ["The guest name field is required."]
+  }
+}
+```
+
+### Unauthenticated `401`
+
+```json
+{ "message": "Unauthenticated." }
+```
+
+---
+
+## Guest stay flow
+
+```
+Login
+  → Booking (optional)
+  → Reservation (check-in + planned checkout + rooms)
+  → Food / service / payment while in-house
+  → Checkout (room bill is calculated here)
+```
+
+- Reservation stores stay dates only. Room **bill / GST / total** stay `null` until checkout.
+- After checkout, food order add is rejected.
+- Only one active checkout per reservation.
+
+---
+
+## Auth
+
+### Login — `POST /login` (public)
+
+```json
+{
+  "user_code": "0110",
+  "password": "password"
+}
+```
+
+`200`
+
+```json
+{
+  "message": "Login successful.",
+  "token": "1|abc123...",
+  "token_type": "Bearer",
+  "user": {
+    "user_id": 1,
+    "org_id": 1,
+    "branch_id": 1,
+    "user_name": "Rajsekhar Roy Chowdhury",
+    "short_name": "Rajsekhar",
+    "user_code": "0110",
+    "is_active": true,
+    "status": "LogIn",
+    "branch_code": "01",
+    "branch_name": "SONKUPI",
+    "resort_name": "SONKUPI FOREST RESORT"
+  }
+}
+```
+
+Save `token` and send it as `Bearer {token}` on all later calls.
+
+---
+
+## Sidebar menus
+
+### `GET /menus`
+
+Use this to build the left menu. Response key is `menus` (not `data`).
+
+---
+
+## Masters
+
+Pattern for most masters:
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/{module}/list` |
+| Search | `GET` | `/{module}/search?keyword=` |
+| Add | `POST` | `/{module}/add` |
+| Update | `PUT` | `/{module}/update/{id}` |
+| Delete | `DELETE` | `/{module}/delete/{id}` |
+
+### Room type — `/room-type`
+
+Add:
+
+```json
+{
+  "room_tname": "Deluxe Cottage",
+  "room_charges": 3750,
+  "extra_bed_charges": 500
+}
+```
+
+| Field | Required |
+|---|---|
+| `room_tname` | Yes |
+| `room_charges` | Yes |
+| `extra_bed_charges` | No |
+
+List fields: `Room_TId`, `Room_TName`, `Room_Charges`, `Extra_Bed_Charges`, `Status`.
+
+### Room details — `/room-details`
+
+List: optional `?room_type=1`.
+
+Add:
+
+```json
+{
+  "room_type": 1,
+  "room_no": "112",
+  "room_desc": "Cottage",
+  "adult": 2,
+  "child": 1,
+  "booking_allowed": 1
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `room_type` | Yes | `Room_TId` from room type |
+| `room_no` | Yes | |
+| `adult` | Yes | min 1 |
+| `room_desc` | No | |
+| `child` | No | |
+| `booking_allowed` | No | `1` = can reserve, `0` = blocked. Default `1`. Master flag only; reservation does not change it. |
+
+### Price manager — regular — `/price-manager/regular`
+
+One regular rate per room type.
+
+```json
+{
+  "room_tid": 1,
+  "rate_mon": 3750,
+  "rate_tue": 3750,
+  "rate_wed": 3750,
+  "rate_thu": 3750,
+  "rate_fri": 4000,
+  "rate_sat": 4500,
+  "rate_sun": 4500
+}
+```
+
+All weekday rates are required.
+
+### Price manager — special — `/price-manager/special`
+
+```json
+{
+  "room_tid": 1,
+  "event_name": "Durga Pujo 2026",
+  "date_from": "2026-10-17",
+  "date_upto": "2026-10-21",
+  "rate_spl": 4250
+}
+```
+
+Date ranges for the same room type cannot overlap.
+
+### Menu category — `/menu-category`
+
+```json
+{ "categ_name": "Breakfast" }
+```
+
+Category name is unique.
+
+### Menu details — `/menu-details`
+
+List: optional `?category_id=1`. Use `Item_Id` as `menu_id` on food orders.
+
+```json
+{
+  "category_id": 1,
+  "menu_code": 101,
+  "menu_name": "Toast Butter/Jam",
+  "menu_shortnm": "Toast",
+  "menu_desc": "4 Pcs",
+  "rate": 45
+}
+```
+
+| Field | Required |
+|---|---|
+| `category_id` | Yes |
+| `menu_name` | Yes |
+| `rate` | Yes |
+| `menu_code` / `menu_shortnm` / `menu_desc` | No |
+
+Menu name is unique per category. `menu_code` is unique.
+
+### Paid service — `/paid-service`
+
+Use `Service_Id` as `service_id` on service orders.
+
+```json
+{
+  "service_name": "EV Charging/Hour",
+  "serv_desc": "Per Hour Basis",
+  "serv_charges": 150
+}
+```
+
+### Travel agent — `/travel-agent`
+
+Use `Agent_Id` as `agent_id` on booking / reservation.
+
+```json
+{
+  "agent_name": "Rajesh Travels",
+  "org_name": "Rajesh Tours & Travels",
+  "address": "Kolkata",
+  "contact_no": "9876543210",
+  "gst_no": null,
+  "pan_no": null,
+  "comm_prcnt": 10
+}
+```
+
+Only `agent_name` is required. Delete is blocked if the agent is used on a booking or reservation.
+
+### Staff profile — `/staff-profile`
+
+```json
+{
+  "staff_name": "Ramesh Kumar",
+  "nick_name": "Ramesh",
+  "guardian_name": "Suresh Kumar",
+  "address": "Purulia",
+  "cont_no": "9876543210",
+  "gender_cd": 1,
+  "age": "28",
+  "aadhar_no": "1234-5678-9012",
+  "join_date": "2024-01-01",
+  "designation": "Manager",
+  "salary": 15000,
+  "bank_dtls": "SBI 123456",
+  "remarks": null
+}
+```
+
+Only `staff_name` is required. `gender_cd`: `1` Male, `2` Female, `3` Others.
+
+### Users — `/users`
+
+Add:
+
+```json
+{
+  "org_id": 1,
+  "branch_id": 1,
+  "user_name": "Sourav Mondal",
+  "short_name": "Sourav",
+  "user_code": "0112",
+  "password": "Password@123"
+}
+```
+
+All fields required. `user_code` is unique. Password cannot be changed on update. You cannot delete your own account.
+
+---
+
+## Booking
+
+Number format: `DDYY####` (example `19260001`). Financial year starts 1 April.
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/booking/list` |
+| Details | `GET` | `/booking/details/{bookingNo}` |
+| Add | `POST` | `/booking/add` |
+| Update | `PUT` | `/booking/update/{bookingId}` |
+| Cancel | `PUT` | `/booking/cancel/{bookingId}` |
+
+List returns bookings created by the logged-in user. Details uses **booking number**, update/cancel use **booking id**.
+
+Add:
+
+```json
+{
+  "guest_name": "Rajesh Kumar",
+  "contact_no": "9876543210",
+  "room_tid": 1,
+  "no_of_room": 2,
+  "checkin_date": "2026-10-01",
+  "stay_duration": 3,
+  "exp_chkout_dt": "2026-10-04",
+  "agent_id": null,
+  "note": "Early check-in requested"
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `guest_name` | Yes | |
+| `contact_no` | Yes | max 15 |
+| `room_tid` | Yes | room type, not a room |
+| `no_of_room` | Yes | |
+| `checkin_date` | Yes | |
+| `stay_duration` | Yes | nights |
+| `exp_chkout_dt` | No | auto = check-in + stay duration |
+| `agent_id` | No | |
+| `note` | No | |
+
+Booking does **not** allot a physical room. That happens on reservation.
+
+---
+
+## Reservation
+
+Number format: same as booking (`DDYY####`).
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/reservation/list` optional `?booking_no=` |
+| Details | `GET` | `/reservation/details/{reservationNo}` |
+| Add | `POST` | `/reservation/add` |
+| Update | `PUT` | `/reservation/update/{reservationId}` |
+
+Details uses **reservation number**. Update uses **reservation id**.
+
+Details returns `reservation` + `rooms`. On a new reservation, rooms look like:
+
+```json
+{
+  "From_Date": "2026-10-01",
+  "Upto_Date": "2026-10-03",
+  "Bill_Amount": null,
+  "Gst_Amount": null,
+  "Tot_Amount": null
+}
+```
+
+`Upto_Date` is the planned checkout. Amounts stay null until checkout.
+
+### Add — walk-in
+
+```json
+{
+  "guest_name": "Rajesh Kumar",
+  "contact_no": "9876543210",
+  "aadhar_no": "1234-5678-9012",
+  "address_1": "Park Street, Kolkata",
+  "address_2": "West Bengal - 700016",
+  "checkin_date": "2026-10-01",
+  "checkout_date": "2026-10-03",
+  "adult_no": 2,
+  "child_no": 1,
+  "room_ids": [1],
+  "extra_bed_no": 0,
+  "agent_id": 1,
+  "special_request": "Early check-in requested"
+}
+```
+
+### Add — from a booking
+
+```json
+{
+  "booking_no": "19260001",
+  "guest_name": "Rajesh Kumar",
+  "contact_no": "9876543210",
+  "checkin_date": "2026-11-01",
+  "checkout_date": "2026-11-03",
+  "adult_no": 2,
+  "child_no": 0,
+  "room_id": 12,
+  "extra_bed_no": 0
+}
+```
+
+### Add — multiple rooms
+
+```json
+{
+  "guest_name": "Rajesh Kumar",
+  "contact_no": "9876543210",
+  "checkin_date": "2026-11-10",
+  "checkout_date": "2026-11-12",
+  "adult_no": 2,
+  "child_no": 0,
+  "room_ids": [13, 14],
+  "extra_bed_no": 0
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `guest_name` | Yes | |
+| `contact_no` | Yes | max 25 |
+| `checkin_date` | Yes | |
+| `checkout_date` | Yes | must be after check-in; stored as room `Upto_Date` |
+| `adult_no` | Yes | min 1 |
+| `room_id` **or** `room_ids` | Yes | send one of them |
+| `booking_no` | No | omit for walk-in |
+| `no_of_room` | No | if sent, must match selected rooms |
+| `child_no` | No | |
+| `extra_bed_no` | No | |
+| `agent_id` | No | |
+| `aadhar_no` / `address_1` / `address_2` / `special_request` | No | |
+
+Rules the UI should handle:
+
+- `Booking_Allowed = 0` → room cannot be reserved.
+- Overlapping stay on the same room → `Room is already booked.` Same-day checkout + next check-in is allowed.
+- Do **not** send bill / GST / total on reservation add.
+- Do **not** expect `Booking_Allowed` to flip after reserve.
+
+Success `201` includes `data` (reservation) and `rooms`.
+
+---
+
+## Payment
+
+Writes a collection against a reservation.
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/payment/list` optional `?reservation_no=` |
+| Details | `GET` | `/payment/details/{collectionId}` |
+| Add | `POST` | `/payment/add` |
+| Update | `PUT` | `/payment/update/{collectionId}` |
+| Delete | `DELETE` | `/payment/delete/{collectionId}` |
+
+Add (Body = **raw JSON**):
+
+```json
+{
+  "reservation_no": "19260001",
+  "coll_date": "2026-10-01",
+  "coll_amount": 500,
+  "coll_mode": 1,
+  "final_coll": false
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `reservation_no` | Yes | |
+| `coll_amount` | Yes | number, min `0.01` |
+| `coll_mode` | Yes | integer, min `1` |
+| `coll_date` | No | defaults today |
+| `final_coll` | No | boolean |
+
+---
+
+## Food order
+
+GST is calculated on the server (`FoodBill_GST`).
+
+`Order_Status`: `0` Not delivered, `1` Delivered.
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/food-order/list` optional `?reservation_no=` |
+| Details | `GET` | `/food-order/details/{foodOrdId}` |
+| Add | `POST` | `/food-order/add` |
+| Update | `PUT` | `/food-order/update/{foodOrdId}` |
+| Delete | `DELETE` | `/food-order/delete/{foodOrdId}` |
+
+Add:
+
+```json
+{
+  "reservation_no": "19260001",
+  "order_date": "2026-10-01",
+  "order_time": "14:30",
+  "room_service": true,
+  "room_id": 1,
+  "special_ins": "Less spicy",
+  "items": [
+    { "menu_id": 1, "quantity": 2 },
+    { "menu_id": 2, "quantity": 1 }
+  ]
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `reservation_no` | Yes | |
+| `items` | Yes | at least one |
+| `items.*.menu_id` | Yes | `Item_Id` from menu-details |
+| `items.*.quantity` | Yes | min 1 |
+| `order_date` / `order_time` | No | |
+| `room_service` | No | boolean |
+| `room_id` | No | |
+| `special_ins` | No | max 100 |
+
+If the reservation is already checked out:
+
+```json
+{
+  "Error_Code": 1,
+  "Message": "Reservation already checked out.",
+  "data": null
+}
+```
+
+Mark delivered:
+
+```json
+{
+  "order_status": 1,
+  "delivered_by": 1,
+  "special_ins": "Delivered"
+}
+```
+
+---
+
+## Service order
+
+GST is calculated on the server (`OthrSrv_GST`).
+
+`Order_Status`: `0` Booked, `1` Complete.
+
+| Action | Method | Path |
+|---|---|---|
+| List | `GET` | `/service-order/list` optional `?reservation_no=` |
+| Details | `GET` | `/service-order/details/{servOrdId}` |
+| Add | `POST` | `/service-order/add` |
+| Update | `PUT` | `/service-order/update/{servOrdId}` |
+| Delete | `DELETE` | `/service-order/delete/{servOrdId}` |
+
+Add:
+
+```json
+{
+  "reservation_no": "19260001",
+  "order_date": "2026-10-01",
+  "service_id": 1,
+  "quantity": 2,
+  "remarks": "Evening"
+}
+```
+
+| Field | Required |
+|---|---|
+| `reservation_no` | Yes |
+| `service_id` | Yes (`Service_Id` from paid-service) |
+| `quantity` | No (default 1) |
+| `order_date` | No |
+| `remarks` | No |
+
+---
+
+## Checkout
+
+This is where the **room bill** is calculated (regular / special rates + extra bed + GST). It writes amounts on allotted rooms and creates the checkout bill.
+
+Bill number format: `B` + `DDYY####` (example `B18260001`).
+
+| Action | Method | Path |
+|---|---|---|
+| Summary | `GET` | `/checkout/summary?reservation_no=` |
+| List | `GET` | `/checkout/list` optional `?reservation_no=` |
+| Details | `GET` | `/checkout/details/{checkoutId}` |
+| Add | `POST` | `/checkout/add` |
+| Cancel | `DELETE` | `/checkout/delete/{checkoutId}` |
+
+Call summary before checkout to preview room + food + service + payments.
+
+Add:
+
+```json
+{
+  "reservation_no": "19260001",
+  "checkout_date": "2026-10-03"
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `reservation_no` | Yes | |
+| `checkout_date` | No | defaults today; must be after check-in |
+
+Checkout date on this API is the **actual** checkout. Reservation `checkout_date` was only the planned stay.
+
+Only one active checkout per reservation. Cancel sets `Status = 0`.
+
+---
+
+## Endpoint list
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/login` | No |
+| GET | `/menus` | Yes |
+| GET/POST/PUT/DELETE | `/room-type/*` | Yes |
+| GET/POST/PUT/DELETE | `/room-details/*` | Yes |
+| GET/POST/PUT/DELETE | `/price-manager/regular/*` | Yes |
+| GET/POST/PUT/DELETE | `/price-manager/special/*` | Yes |
+| GET/POST/PUT/DELETE | `/menu-category/*` | Yes |
+| GET/POST/PUT/DELETE | `/menu-details/*` | Yes |
+| GET/POST/PUT/DELETE | `/paid-service/*` | Yes |
+| GET/POST/PUT/DELETE | `/travel-agent/*` | Yes |
+| GET/POST/PUT/DELETE | `/staff-profile/*` | Yes |
+| GET/POST/PUT/DELETE | `/users/*` | Yes |
+| GET/POST/PUT | `/booking/*` | Yes |
+| GET/POST/PUT | `/reservation/*` | Yes |
+| GET/POST/PUT/DELETE | `/payment/*` | Yes |
+| GET/POST/PUT/DELETE | `/food-order/*` | Yes |
+| GET/POST/PUT/DELETE | `/service-order/*` | Yes |
+| GET/POST/DELETE | `/checkout/*` | Yes |

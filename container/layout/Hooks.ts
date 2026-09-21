@@ -37,6 +37,9 @@ const MENU_ICON_MAP: Record<string, string> = {
   Reports: "MdAssessment",
 };
 
+/** Deduplicate concurrent / Strict Mode menu fetches */
+let menusInFlight: Promise<void> | null = null;
+
 const resolveMenuIcon = (menuName: string, icon?: string | null) => {
   if (icon && String(icon).trim()) return String(icon).trim();
   return MENU_ICON_MAP[menuName] || "MdMenu";
@@ -44,14 +47,16 @@ const resolveMenuIcon = (menuName: string, icon?: string | null) => {
 
 export const mapMenusToSidebar = (menus: ApiMenu[] = []): SidebarLink[] =>
   menus.map((menu) => ({
-    title: menu.menu_name,
-    path: menu.route || "",
-    Icon: resolveMenuIcon(menu.menu_name, menu.icon),
-    menuId: menu.menu_id,
-    childLinks: (menu.sub_menus || []).map((sub) => ({
-      Menue_Name: sub.submenu_name,
-      Page_Allies: sub.route || "",
-      SubMenu_Id: sub.submenu_id,
+    menu_id: menu.menu_id,
+    menu_name: menu.menu_name,
+    icon: resolveMenuIcon(menu.menu_name, menu.icon),
+    route: menu.route || "",
+    sub_menus: (menu.sub_menus || []).map((sub) => ({
+      submenu_id: sub.submenu_id,
+      submenu_name: sub.submenu_name,
+      icon: sub.icon ?? null,
+      route: sub.route || "",
+      menu_sl: sub.menu_sl,
     })),
   }));
 
@@ -71,41 +76,58 @@ export const useDashboardLayout = () => {
   const searchValue = searchForm.watch("search");
 
   const loadMenus = useCallback(async () => {
-    dispatch(setSidebarLoading(true));
+    if (menusInFlight) {
+      await menusInFlight;
+      return;
+    }
+
+    menusInFlight = (async () => {
+      dispatch(setSidebarLoading(true));
+      try {
+        const res = await getMenusAPI();
+        const menus = Array.isArray(res?.menus) ? res.menus : [];
+
+        if (menus.length) {
+          dispatch(setSidebarData(mapMenusToSidebar(menus)));
+          return;
+        }
+
+        dispatch(setSidebarData([]));
+        if (res?.message || res?.Message) {
+          toast.error(res.message || res.Message || "Unable to load menus");
+        }
+      } finally {
+        dispatch(setSidebarLoading(false));
+      }
+    })();
+
     try {
-      const res = await getMenusAPI();
-      const menus = Array.isArray(res?.menus) ? res.menus : [];
-
-      if (menus.length) {
-        dispatch(setSidebarData(mapMenusToSidebar(menus)));
-        return;
-      }
-
-      dispatch(setSidebarData([]));
-      if (res?.message || res?.Message) {
-        toast.error(res.message || res.Message || "Unable to load menus");
-      }
+      await menusInFlight;
     } finally {
-      dispatch(setSidebarLoading(false));
+      menusInFlight = null;
     }
   }, [dispatch]);
 
   useEffect(() => {
+    if (sidebarData.length > 0) {
+      dispatch(setSidebarLoading(false));
+      return;
+    }
     void loadMenus();
-  }, [loadMenus]);
+  }, [dispatch, loadMenus, sidebarData.length]);
 
   const menuItems = useMemo(() => {
     const items: MenuSearchItem[] = [];
     (sidebarData || []).forEach((link: SidebarLink) => {
-      if (link.path) {
-        items.push({ label: link.title, href: link.path, group: "Menu" });
+      if (link.route) {
+        items.push({ label: link.menu_name, href: link.route, group: "Menu" });
       }
-      (link.childLinks || []).forEach((child) => {
-        if (child.Page_Allies) {
+      (link.sub_menus || []).forEach((child) => {
+        if (child.route) {
           items.push({
-            label: child.Menue_Name,
-            href: child.Page_Allies,
-            group: link.title,
+            label: child.submenu_name,
+            href: child.route,
+            group: link.menu_name,
           });
         }
       });

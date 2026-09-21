@@ -10,7 +10,7 @@ export type RoomTypeFormValues = {
   room_tname: string;
   room_charges: number | string;
   extra_bed_charges: number | string;
-  status: boolean;
+  // status: boolean;
 };
 
 export type RoomTypePayload = {

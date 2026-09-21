@@ -23,7 +23,7 @@ type ListPageFrameProps = {
 };
 
 /**
- * List/CRUD page: one ScrollArea on the table only (no nested page scrollbars).
+ * List/CRUD page: toolbar stays fixed; only the table region scrolls.
  */
 export function ListPageFrame({
   title,
@@ -43,15 +43,21 @@ export function ListPageFrame({
         ) : null}
 
         <PageSection
-          padding="md"
+          padding="none"
           borderedHeader={false}
-          className="flex min-h-0 flex-1 flex-col"
-          contentClassName="flex min-h-0 flex-1 flex-col !pb-0"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-0"
         >
-          <div className="mb-4 shrink-0">{toolbar}</div>
-          <div className="-mx-3.5 flex min-h-0 flex-1 flex-col border-t border-border sm:-mx-4">
-            <ScrollArea className="h-full min-h-0 w-full flex-1">
-              <div className="min-w-0 p-0 pb-3 sm:pb-4">{children}</div>
+          <div className="shrink-0 border-b border-border bg-card px-3 py-3 sm:px-4 sm:py-3.5">
+            {toolbar}
+          </div>
+
+          <div className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <ScrollArea
+              horizontal={false}
+              className="min-h-0 w-full flex-1"
+            >
+              <div className="min-w-0 p-0">{children}</div>
             </ScrollArea>
           </div>
         </PageSection>

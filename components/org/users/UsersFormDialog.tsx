@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import InputField from "@/common/formFields/InputField";
-import SwitchField from "@/common/formFields/SwitchField";
 import type { AppUser, AppUserFormValues } from "@/container/org/users/types";
 
 type UsersFormDialogProps = {
@@ -36,7 +35,11 @@ const UsersFormDialog = ({
   const isEdit = Boolean(editingRow?.User_Id);
 
   return (
-    <Dialog open={open} disablePointerDismissal>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      disablePointerDismissal
+    >
       <DialogContent className="max-h-[90vh] w-full overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">
@@ -44,7 +47,7 @@ const UsersFormDialog = ({
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update name, code, and active status. Password cannot be changed here."
+              ? "Update name and user code. Password cannot be changed here."
               : "Create a user for the current organisation and branch."}
           </DialogDescription>
         </DialogHeader>
@@ -94,21 +97,20 @@ const UsersFormDialog = ({
               ) : null}
             </div>
 
-            {isEdit ? (
-              <SwitchField
-                control={form.control}
-                name="is_active"
-                label="Active"
-                description="Inactive users cannot sign in."
-              />
-            ) : null}
-
             <DialogFooter className="gap-2 sm:gap-2">
               <Button
                 type="button"
                 variant="outline"
                 className="h-10 cursor-pointer rounded-[0.625rem]"
-                onClick={() => onOpenChange(false)}
+                onMouseDown={(event) => {
+                  // Prevent the closing click from landing on "+ Add user" underneath
+                  event.preventDefault();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onOpenChange(false);
+                }}
                 disabled={saving}
               >
                 Cancel

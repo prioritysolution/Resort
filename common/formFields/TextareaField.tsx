@@ -17,6 +17,7 @@ interface TextareaFieldProps<T extends FieldValues> {
   label?: string;
   placeholder?: string;
   className?: string;
+  formItemClassName?: string;
   disabled?: boolean;
   rows?: number;
   description?: string;
@@ -29,6 +30,7 @@ const TextareaField = <T extends FieldValues>({
   label,
   placeholder,
   className,
+  formItemClassName,
   disabled = false,
   rows = 3,
   description,
@@ -39,7 +41,7 @@ const TextareaField = <T extends FieldValues>({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem className="w-full">
+        <FormItem className={cn("w-full", formItemClassName)}>
           {label ? (
             <FormLabel className="text-sm font-medium">
               {label}
@@ -55,7 +57,7 @@ const TextareaField = <T extends FieldValues>({
               rows={rows}
               aria-invalid={!!fieldState?.error?.message}
               className={cn(
-                "min-h-[96px] rounded-md",
+                "min-h-[96px] w-full rounded-md",
                 disabled && "cursor-not-allowed bg-muted/80",
                 className,
               )}

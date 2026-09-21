@@ -45,7 +45,7 @@ const schema: yup.ObjectSchema<RoomDetailFormValues> = yup.object({
       return !Number.isNaN(num) && num >= 0;
     }),
   booking_allowed: yup.boolean().required().default(true),
-  status: yup.boolean().required().default(true),
+  // status: yup.boolean().required().default(true),
 });
 
 const emptyValues: RoomDetailFormValues = {
@@ -55,7 +55,7 @@ const emptyValues: RoomDetailFormValues = {
   adult: "",
   child: "",
   booking_allowed: true,
-  status: true,
+  // status: true,
 };
 
 export const useRoomDetails = () => {
@@ -143,7 +143,7 @@ export const useRoomDetails = () => {
       adult: row.Adult ?? "",
       child: row.Child ?? "",
       booking_allowed: Number(row.Booking_Allowed) === 1,
-      status: Number(row.Status) === 1,
+      // status: Number(row.Status) === 1,
     });
     setDialogOpen(true);
   };
@@ -169,7 +169,7 @@ export const useRoomDetails = () => {
       const res = editingRow?.Room_Id
         ? await updateRoomDetailsAPI(editingRow.Room_Id, {
             ...body,
-            status: values.status ? 1 : 0,
+            // status: values.status ? 1 : 0,
           })
         : await addRoomDetailsAPI(body);
 

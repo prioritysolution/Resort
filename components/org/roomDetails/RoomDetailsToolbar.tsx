@@ -50,7 +50,7 @@ const RoomDetailsToolbar = ({
             setRoomTypeFilter(value === "all" ? "" : Number(value))
           }
         >
-          <SelectTrigger className="h-10 w-full rounded-[0.625rem] sm:w-48">
+          <SelectTrigger className="h-10 w-full min-w-0 rounded-[0.625rem] sm:w-44 md:w-52">
             <SelectValue placeholder="All room types" />
           </SelectTrigger>
           <SelectContent>

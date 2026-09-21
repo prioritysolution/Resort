@@ -45,7 +45,7 @@ const schema: yup.ObjectSchema<MenuDetailFormValues> = yup.object({
       const num = Number(value);
       return value !== "" && value != null && !Number.isNaN(num) && num >= 0;
     }),
-  status: yup.boolean().required().default(true),
+  // status: yup.boolean().required().default(true),
 });
 
 const emptyValues: MenuDetailFormValues = {
@@ -55,7 +55,7 @@ const emptyValues: MenuDetailFormValues = {
   menu_shortnm: "",
   menu_desc: "",
   rate: "",
-  status: true,
+  // status: true,
 };
 
 export const useMenuDetails = () => {
@@ -143,7 +143,7 @@ export const useMenuDetails = () => {
       menu_shortnm: row.Menu_ShortNm || "",
       menu_desc: row.Menu_Desc || "",
       rate: row.Rate ?? "",
-      status: Number(row.Status) === 1,
+      // status: Number(row.Status) === 1,
     });
     setDialogOpen(true);
   };
@@ -172,7 +172,7 @@ export const useMenuDetails = () => {
       const res = editingRow?.Item_Id
         ? await updateMenuDetailsAPI(editingRow.Item_Id, {
             ...body,
-            status: values.status ? 1 : 0,
+            // status: values.status ? 1 : 0,
           })
         : await addMenuDetailsAPI(body);
 

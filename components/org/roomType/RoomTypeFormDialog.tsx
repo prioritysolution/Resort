@@ -69,7 +69,7 @@ const RoomTypeFormDialog = ({
                 name="room_charges"
                 label="Room charges"
                 type="number"
-                placeholder="3750"
+                placeholder="Enter room charges"
                 isRequired
               />
               <InputField
@@ -77,18 +77,19 @@ const RoomTypeFormDialog = ({
                 name="extra_bed_charges"
                 label="Extra bed charges"
                 type="number"
-                placeholder="500"
+                placeholder="Enter extra bed charges"
+                isRequired
               />
             </div>
 
-            {isEdit ? (
+            {/* {isEdit ? (
               <SwitchField
                 control={form.control}
                 name="status"
                 label="Active"
                 description="Inactive types stay hidden from new bookings."
               />
-            ) : null}
+            ) : null} */}
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button

@@ -114,14 +114,14 @@ const TravelAgentFormDialog = ({
               />
             </div>
 
-            {isEdit ? (
+            {/* {isEdit ? (
               <SwitchField
                 control={form.control}
                 name="status"
                 label="Active"
                 description="Inactive agents stay hidden from new bookings."
               />
-            ) : null}
+            ) : null} */}
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button

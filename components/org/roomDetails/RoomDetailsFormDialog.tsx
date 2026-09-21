@@ -97,6 +97,7 @@ const RoomDetailsFormDialog = ({
                 label="Adult"
                 type="number"
                 placeholder="2"
+                digitsOnly
                 isRequired
               />
               <InputField
@@ -105,6 +106,7 @@ const RoomDetailsFormDialog = ({
                 label="Child"
                 type="number"
                 placeholder="1"
+                digitsOnly
               />
             </div>
 
@@ -115,14 +117,14 @@ const RoomDetailsFormDialog = ({
               description="When off, this room stays unavailable for new bookings."
             />
 
-            {isEdit ? (
+            {/* {isEdit ? (
               <SwitchField
                 control={form.control}
                 name="status"
                 label="Active"
                 description="Inactive rooms stay hidden from operations."
               />
-            ) : null}
+            ) : null} */}
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button

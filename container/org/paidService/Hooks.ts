@@ -23,18 +23,18 @@ const schema: yup.ObjectSchema<PaidServiceFormValues> = yup.object({
   serv_charges: yup
     .mixed<number | string>()
     .required("Service charges are required")
-    .test("charges", "Enter a valid charge", (value) => {
+    .test("charges", "Service charges must be greater than 0", (value) => {
       const num = Number(value);
-      return !Number.isNaN(num) && num >= 0;
+      return !Number.isNaN(num) && num > 0;
     }),
-  status: yup.boolean().required().default(true),
+  // status: yup.boolean().required().default(true),
 });
 
 const emptyValues: PaidServiceFormValues = {
   service_name: "",
   serv_desc: "",
   serv_charges: "",
-  status: true,
+  // status: true,
 };
 
 export const usePaidService = () => {
@@ -97,7 +97,7 @@ export const usePaidService = () => {
       service_name: row.Service_Name || "",
       serv_desc: row.Serv_Desc || "",
       serv_charges: row.Serv_Charges ?? "",
-      status: Number(row.Status) === 1,
+      // status: Number(row.Status) === 1,
     });
     setDialogOpen(true);
   };
@@ -120,7 +120,7 @@ export const usePaidService = () => {
       const res = editingRow?.Service_Id
         ? await updatePaidServiceAPI(editingRow.Service_Id, {
             ...body,
-            status: values.status ? 1 : 0,
+            // status: values.status ? 1 : 0,
           })
         : await addPaidServiceAPI(body);
 

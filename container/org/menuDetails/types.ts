@@ -17,7 +17,7 @@ export type MenuDetailFormValues = {
   menu_shortnm: string;
   menu_desc: string;
   rate: number | string;
-  status: boolean;
+  // status: boolean;
 };
 
 export type MenuDetailPayload = {

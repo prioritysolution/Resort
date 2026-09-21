@@ -18,7 +18,7 @@ export type TravelAgentFormValues = {
   gst_no: string;
   pan_no: string;
   comm_prcnt: number | string;
-  status: boolean;
+  // status: boolean;
 };
 
 export type TravelAgentPayload = {

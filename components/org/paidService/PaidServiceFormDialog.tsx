@@ -15,6 +15,7 @@ import {
 import InputField from "@/common/formFields/InputField";
 import SwitchField from "@/common/formFields/SwitchField";
 import type { PaidService, PaidServiceFormValues } from "@/container/org/paidService/types";
+import TextareaField from "@/common/formFields/TextareaField";
 
 type PaidServiceFormDialogProps = {
   open: boolean;
@@ -64,11 +65,12 @@ const PaidServiceFormDialog = ({
                 isRequired
                 formItemClassName="sm:col-span-2"
               />
-              <InputField
+              <TextareaField
                 control={form.control}
                 name="serv_desc"
                 label="Description"
-                placeholder="2 Glass, 1 Water Bottle"
+                placeholder="Enter description"
+                rows={3}
                 formItemClassName="sm:col-span-2"
               />
               <InputField
@@ -82,14 +84,14 @@ const PaidServiceFormDialog = ({
               />
             </div>
 
-            {isEdit ? (
+            {/* {isEdit ? (
               <SwitchField
                 control={form.control}
                 name="status"
                 label="Active"
                 description="Inactive services stay hidden from new bookings."
               />
-            ) : null}
+            ) : null} */}
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button

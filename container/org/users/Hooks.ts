@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -49,7 +49,6 @@ const schema: yup.ObjectSchema<AppUserFormValues> = yup.object({
       if (!value) return true;
       return value.length >= 6;
     }),
-  is_active: yup.boolean().required().default(true),
 });
 
 const cookieNumber = (key: string) => {
@@ -65,7 +64,6 @@ const getEmptyValues = (): AppUserFormValues => ({
   short_name: "",
   user_code: "",
   password: "",
-  is_active: true,
 });
 
 export const useUsers = () => {
@@ -79,6 +77,8 @@ export const useUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  /** Ignore reopen from Cancel click-through onto "+ Add user" */
+  const reopenGuardUntilRef = useRef(0);
 
   const form = useForm<AppUserFormValues>({
     resolver: yupResolver(schema),
@@ -115,12 +115,14 @@ export const useUsers = () => {
   }, [search, loadList]);
 
   const openCreate = () => {
+    if (Date.now() < reopenGuardUntilRef.current) return;
     setEditingRow(null);
     form.reset(getEmptyValues());
     setDialogOpen(true);
   };
 
   const openEdit = (row: AppUser) => {
+    if (Date.now() < reopenGuardUntilRef.current) return;
     setEditingRow(row);
     form.reset({
       org_id: row.Org_Id ?? cookieNumber("resortOrgId"),
@@ -129,12 +131,12 @@ export const useUsers = () => {
       short_name: row.Short_Name || "",
       user_code: row.User_Code || "",
       password: "",
-      is_active: Number(row.Is_Active) === 1,
     });
     setDialogOpen(true);
   };
 
   const closeDialog = () => {
+    reopenGuardUntilRef.current = Date.now() + 400;
     setDialogOpen(false);
     setEditingRow(null);
     form.reset(getEmptyValues());
@@ -178,7 +180,6 @@ export const useUsers = () => {
         user_name: String(values.user_name).trim(),
         short_name: String(values.short_name).trim(),
         user_code: String(values.user_code).trim(),
-        is_active: values.is_active ? 1 : 0,
       });
 
       if (res?.Error_Code === 0) {

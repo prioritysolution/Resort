@@ -32,7 +32,7 @@ const schema: yup.ObjectSchema<TravelAgentFormValues> = yup.object({
       const num = Number(value);
       return !Number.isNaN(num) && num >= 0 && num <= 100;
     }),
-  status: yup.boolean().required().default(true),
+  // status: yup.boolean().required().default(true),
 });
 
 const emptyValues: TravelAgentFormValues = {
@@ -43,7 +43,7 @@ const emptyValues: TravelAgentFormValues = {
   gst_no: "",
   pan_no: "",
   comm_prcnt: "",
-  status: true,
+  // status: true,
 };
 
 export const useTravelAgent = () => {
@@ -110,7 +110,7 @@ export const useTravelAgent = () => {
       gst_no: row.GST_No || "",
       pan_no: row.PAN_No || "",
       comm_prcnt: row.Comm_Prcnt ?? "",
-      status: Number(row.Status) === 1,
+      // status: Number(row.Status) === 1,
     });
     setDialogOpen(true);
   };
@@ -140,7 +140,7 @@ export const useTravelAgent = () => {
       const res = editingRow?.Agent_Id
         ? await updateTravelAgentAPI(editingRow.Agent_Id, {
             ...body,
-            status: values.status ? 1 : 0,
+            // status: values.status ? 1 : 0,
           })
         : await addTravelAgentAPI(body);
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { format, isValid } from "date-fns";
 import { useGuestCrud } from "@/container/guest/shared/useGuestCrud";
 import { getRoomTypeListAPI } from "@/container/org/roomType/RoomTypeApis";
 import { getTravelAgentListAPI } from "@/container/org/travelAgent/TravelAgentApis";
@@ -15,6 +16,15 @@ import {
 } from "./BookingApis";
 import type { Booking, BookingFormValues, BookingPayload } from "./types";
 
+const toApiDate = (value: Date | string | null | undefined) => {
+  if (!value) return "";
+  if (value instanceof Date) {
+    return isValid(value) ? format(value, "yyyy-MM-dd") : "";
+  }
+  const parsed = new Date(value);
+  return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : String(value);
+};
+
 const emptyValues: BookingFormValues = {
   guest_name: "",
   contact_no: "",
@@ -25,17 +35,34 @@ const emptyValues: BookingFormValues = {
   exp_chkout_dt: "",
   agent_id: "",
   note: "",
+  advance_amount: "",
+  advance_mode: 1,
+  is_refundable: false,
 };
+
 const schema = yup.object({
   guest_name: yup.string().required(),
   contact_no: yup.string().required().max(15),
   room_tid: yup.mixed().required(),
   no_of_room: yup.number().min(1).required(),
-  checkin_date: yup.string().required(),
+  checkin_date: yup.mixed<string | Date>().required("Check-in date is required"),
   stay_duration: yup.number().min(1).required(),
-  exp_chkout_dt: yup.string().default(""),
+  exp_chkout_dt: yup.mixed<string | Date>().nullable().default(""),
   agent_id: yup.mixed().default(""),
   note: yup.string().default(""),
+  advance_amount: yup
+    .mixed<number | string>()
+    .default("")
+    .test("advance", "Enter a valid advance amount", (value) => {
+      if (value === "" || value == null) return true;
+      const num = Number(value);
+      return !Number.isNaN(num) && num >= 0;
+    }),
+  advance_mode: yup
+    .number()
+    .oneOf([1, 2, 3], "Select Cash, Bank, or Credit")
+    .required(),
+  is_refundable: yup.boolean().required().default(false),
 });
 
 export function useBooking() {
@@ -85,18 +112,36 @@ export function useBooking() {
       exp_chkout_dt: row.ExpChkOut_Dt || row.Exp_Chkout_Dt || "",
       agent_id: row.Agent_Id || "",
       note: row.Note || "",
+      advance_amount: row.Advance_Amount ?? "",
+      advance_mode: Number(row.Advance_Mode) || 1,
+      is_refundable: Boolean(
+        row.Is_Refundable === true || Number(row.Is_Refundable) === 1,
+      ),
     }),
-    toPayload: (v) => ({
-      guest_name: v.guest_name.trim(),
-      contact_no: v.contact_no.trim(),
-      room_tid: Number(v.room_tid),
-      no_of_room: Number(v.no_of_room),
-      checkin_date: v.checkin_date,
-      stay_duration: Number(v.stay_duration),
-      ...(v.exp_chkout_dt ? { exp_chkout_dt: v.exp_chkout_dt } : {}),
-      agent_id: v.agent_id ? Number(v.agent_id) : null,
-      ...(v.note.trim() ? { note: v.note.trim() } : {}),
-    }),
+    toPayload: (v) => {
+      const advanceAmount =
+        v.advance_amount === "" || v.advance_amount == null
+          ? undefined
+          : Number(v.advance_amount);
+      const checkinDate = toApiDate(v.checkin_date);
+      const expChkoutDt = toApiDate(v.exp_chkout_dt);
+      return {
+        guest_name: v.guest_name.trim(),
+        contact_no: v.contact_no.trim(),
+        room_tid: Number(v.room_tid),
+        no_of_room: Number(v.no_of_room),
+        checkin_date: checkinDate,
+        stay_duration: Number(v.stay_duration),
+        ...(expChkoutDt ? { exp_chkout_dt: expChkoutDt } : {}),
+        agent_id: v.agent_id ? Number(v.agent_id) : null,
+        ...(v.note.trim() ? { note: v.note.trim() } : {}),
+        ...(advanceAmount != null && !Number.isNaN(advanceAmount)
+          ? { advance_amount: advanceAmount }
+          : {}),
+        advance_mode: Number(v.advance_mode),
+        is_refundable: Boolean(v.is_refundable),
+      };
+    },
   });
   return { ...crud, roomTypes, agents };
 }

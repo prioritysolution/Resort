@@ -5,8 +5,8 @@ export type AppUser = {
   User_Name: string;
   Short_Name: string;
   User_Code: string;
-  Is_Active: number;
-  Status: string;
+  Is_Active?: number;
+  Status?: string;
   Branch_Name?: string;
   Resort_Name?: string;
 };
@@ -18,7 +18,6 @@ export type AppUserFormValues = {
   short_name: string;
   user_code: string;
   password: string;
-  is_active: boolean;
 };
 
 export type AppUserAddPayload = {
@@ -34,5 +33,4 @@ export type AppUserUpdatePayload = {
   user_name: string;
   short_name: string;
   user_code: string;
-  is_active: number;
 };

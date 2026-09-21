@@ -10,7 +10,7 @@ export type PaidServiceFormValues = {
   service_name: string;
   serv_desc: string;
   serv_charges: number | string;
-  status: boolean;
+  // status: boolean;
 };
 
 export type PaidServicePayload = {

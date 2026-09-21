@@ -22,26 +22,25 @@ const schema: yup.ObjectSchema<RoomTypeFormValues> = yup.object({
   room_charges: yup
     .mixed<number | string>()
     .required("Room charges are required")
-    .test("charges", "Enter a valid charge", (value) => {
+    .test("charges", "Room charges must be greater than 0", (value) => {
       const num = Number(value);
-      return !Number.isNaN(num) && num >= 0;
+      return !Number.isNaN(num) && num > 0;
     }),
   extra_bed_charges: yup
     .mixed<number | string>()
-    .required()
-    .test("extra", "Enter a valid charge", (value) => {
-      if (value === "" || value == null) return true;
+    .required("Extra bed charges are required")
+    .test("extra", "Extra bed charges must be greater than 0", (value) => {
       const num = Number(value);
-      return !Number.isNaN(num) && num >= 0;
+      return !Number.isNaN(num) && num > 0;
     }),
-  status: yup.boolean().required().default(true),
+  // status: yup.boolean().required().default(true),
 });
 
 const emptyValues: RoomTypeFormValues = {
   room_tname: "",
   room_charges: "",
   extra_bed_charges: "",
-  status: true,
+  // status: true,
 };
 
 export const useRoomType = () => {
@@ -102,7 +101,7 @@ export const useRoomType = () => {
       room_tname: row.Room_TName || "",
       room_charges: row.Room_Charges ?? "",
       extra_bed_charges: row.Extra_Bed_Charges ?? "",
-      status: Number(row.Status) === 1,
+      // status: Number(row.Status) === 1,
     });
     setDialogOpen(true);
   };
@@ -119,13 +118,13 @@ export const useRoomType = () => {
       const body = {
         room_tname: String(values.room_tname).trim(),
         room_charges: Number(values.room_charges),
-        extra_bed_charges: Number(values.extra_bed_charges || 0),
+        extra_bed_charges: Number(values.extra_bed_charges),
       };
 
       const res = editingRow?.Room_TId
         ? await updateRoomTypeAPI(editingRow.Room_TId, {
             ...body,
-            status: values.status ? 1 : 0,
+            // status: values.status ? 1 : 0,
           })
         : await addRoomTypeAPI(body);
 

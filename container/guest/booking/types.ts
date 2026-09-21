@@ -21,6 +21,9 @@ export type Booking = {
   Agent_Id?: number | null;
   Agent_Name?: string | null;
   Note?: string | null;
+  Advance_Amount?: number | string | null;
+  Advance_Mode?: number | string | null;
+  Is_Refundable?: number | boolean | null;
   Status?: number | string;
   Created_By?: number;
   Created_At?: string;
@@ -31,11 +34,15 @@ export type BookingFormValues = {
   contact_no: string;
   room_tid: number | string;
   no_of_room: number | string;
-  checkin_date: string;
+  checkin_date: string | Date;
   stay_duration: number | string;
-  exp_chkout_dt: string;
+  exp_chkout_dt: string | Date;
   agent_id: number | string;
   note: string;
+  advance_amount: number | string;
+  /** 1 = Cash, 2 = Bank, 3 = Credit */
+  advance_mode: number;
+  is_refundable: boolean;
 };
 
 export type BookingPayload = {
@@ -48,4 +55,14 @@ export type BookingPayload = {
   exp_chkout_dt?: string;
   agent_id?: number | null;
   note?: string;
+  advance_amount?: number;
+  advance_mode?: number;
+  is_refundable?: boolean;
 };
+
+/** Advance payment modes for booking form */
+export const BOOKING_ADVANCE_MODES = [
+  { value: 1, label: "Cash" },
+  { value: 2, label: "Bank" },
+  { value: 3, label: "Credit" },
+] as const;

@@ -47,7 +47,7 @@ const UsersTable = ({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="min-w-[4rem] whitespace-nowrap">#</TableHead>
-            <TableHead className="min-w-[5rem]">ID</TableHead>
+            {/* <TableHead className="min-w-[5rem]">ID</TableHead> */}
             <TableHead className="min-w-[12rem]">Name</TableHead>
             <TableHead className="min-w-[8rem]">Short name</TableHead>
             <TableHead className="min-w-[6rem]">Code</TableHead>
@@ -66,9 +66,9 @@ const UsersTable = ({
                 <TableCell className="text-muted-foreground">
                   {index + 1}
                 </TableCell>
-                <TableCell className="tabular-nums text-muted-foreground">
+                {/* <TableCell className="tabular-nums text-muted-foreground">
                   {row.User_Id}
-                </TableCell>
+                </TableCell> */}
                 <TableCell className="font-medium text-foreground">
                   {row.User_Name}
                 </TableCell>

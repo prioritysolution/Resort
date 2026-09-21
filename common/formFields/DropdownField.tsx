@@ -74,6 +74,8 @@ const DropdownField = <T extends FieldValues>({
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  /** Ignore open-from-click briefly after mount (dialog open click can land on this input). */
+  const ignoreClickOpenUntilRef = useRef(0);
 
   const { field, fieldState } = useController({
     control,
@@ -172,20 +174,22 @@ const DropdownField = <T extends FieldValues>({
   }, [sortedOptions, isSearching, searchVal, optionLabelKey]);
 
   useEffect(() => {
+    setMounted(true);
+    ignoreClickOpenUntilRef.current = Date.now() + 450;
+  }, []);
+
+  useEffect(() => {
     if (filteredOptions.length > 0) {
       const selectedIndex = filteredOptions.findIndex(
         (opt) => String(getItemId(opt)) === String(value),
       );
-      setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      // Don't highlight first option as if selected when nothing is chosen
+      setActiveIndex(selectedIndex >= 0 ? selectedIndex : -1);
     } else {
       setActiveIndex(-1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, filteredOptions, value]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -302,8 +306,6 @@ const DropdownField = <T extends FieldValues>({
       e.preventDefault();
       if (activeIndex >= 0 && activeIndex < filteredOptions.length) {
         handleSelectOption(filteredOptions[activeIndex]);
-      } else if (filteredOptions.length > 0) {
-        handleSelectOption(filteredOptions[0]);
       }
     } else if (e.key === "Escape") {
       setOpen(false);
@@ -332,7 +334,11 @@ const DropdownField = <T extends FieldValues>({
             value={searchVal}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => isInteractive && setOpen(true)}
+            onClick={() => {
+              if (!isInteractive) return;
+              if (Date.now() < ignoreClickOpenUntilRef.current) return;
+              setOpen(true);
+            }}
             disabled={disabled || loading}
             placeholder={
               loading

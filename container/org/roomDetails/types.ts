@@ -17,7 +17,7 @@ export type RoomDetailFormValues = {
   adult: number | string;
   child: number | string;
   booking_allowed: boolean;
-  status: boolean;
+  // status: boolean;
 };
 
 export type RoomDetailPayload = {

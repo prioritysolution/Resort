@@ -39,31 +39,31 @@ export function ListToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+        "flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-xs sm:shrink-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full min-w-0 sm:max-w-xs sm:flex-1 md:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={searchPlaceholder}
-            className="h-10 rounded-[0.625rem] border-border bg-background pl-9"
+            className="h-10 w-full rounded-[0.625rem] border-border bg-background pl-9"
             autoComplete="off"
           />
         </div>
         {filters ? (
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full min-w-0 flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             {filters}
           </div>
         ) : null}
       </div>
 
-      <div className="flex shrink-0 flex-row flex-nowrap items-center justify-end gap-2">
+      <div className="flex shrink-0 flex-row flex-wrap items-center justify-end gap-2">
         {countLabel ? (
-          <span className="mr-1 inline-flex h-10 items-center rounded-[0.625rem] border border-border bg-secondary/60 px-3 text-sm font-medium whitespace-nowrap text-foreground tabular-nums">
+          <span className="inline-flex h-9 items-center rounded-[0.625rem] border border-border bg-secondary/60 px-2.5 text-xs font-medium whitespace-nowrap text-foreground tabular-nums sm:h-10 sm:px-3 sm:text-sm">
             {countLabel}
           </span>
         ) : null}
@@ -71,7 +71,7 @@ export function ListToolbar({
           <Button
             type="button"
             variant="outline"
-            className="h-10 shrink-0 cursor-pointer rounded-[0.625rem]"
+            className="h-9 shrink-0 cursor-pointer rounded-[0.625rem] sm:h-10"
             onClick={onRefresh}
             disabled={loading}
           >
@@ -82,11 +82,11 @@ export function ListToolbar({
         {onAdd ? (
           <Button
             type="button"
-            className="h-10 shrink-0 cursor-pointer rounded-[0.625rem] whitespace-nowrap"
+            className="h-9 shrink-0 cursor-pointer rounded-[0.625rem] whitespace-nowrap sm:h-10"
             onClick={onAdd}
           >
             <Plus className="size-4" />
-            {addLabel}
+            <span className="max-[360px]:sr-only">{addLabel}</span>
           </Button>
         ) : null}
       </div>

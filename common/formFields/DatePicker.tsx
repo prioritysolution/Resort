@@ -207,9 +207,9 @@ export function DatePicker<T extends FieldValues>({
   );
 
   return (
-    <div className="grid w-full gap-1.5">
+    <div className="flex w-full flex-col gap-1.5">
       {label ? (
-        <label className="flex items-center px-1 text-[13px] font-medium tracking-wide text-primary">
+        <label className="text-sm font-medium text-foreground">
           {label}
           {isRequired ? <span className="ml-1 text-red-500">*</span> : null}
         </label>

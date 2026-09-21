@@ -17,6 +17,7 @@ import DropdownField from "@/common/formFields/DropdownField";
 import SwitchField from "@/common/formFields/SwitchField";
 import type { MenuCategory } from "@/container/org/menuCategory/types";
 import type { MenuDetail, MenuDetailFormValues } from "@/container/org/menuDetails/types";
+import TextareaField from "@/common/formFields/TextareaField";
 
 type MenuDetailsFormDialogProps = {
   open: boolean;
@@ -106,24 +107,24 @@ const MenuDetailsFormDialog = ({
                 placeholder="45"
                 isRequired
               />
-              <InputField
+              <TextareaField
                 control={form.control}
                 name="menu_desc"
                 label="Description"
-                placeholder="4 Pcs"
-                maxLength={255}
+                placeholder="Enter description"
+                rows={3}
                 className="sm:col-span-2"
               />
             </div>
 
-            {isEdit ? (
+            {/* {isEdit ? (
               <SwitchField
                 control={form.control}
                 name="status"
                 label="Active"
                 description="Inactive items stay hidden from menu operations."
               />
-            ) : null}
+            ) : null} */}
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button

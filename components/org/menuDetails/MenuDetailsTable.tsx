@@ -47,7 +47,7 @@ const MenuDetailsTable = ({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="min-w-[4rem] whitespace-nowrap">#</TableHead>
-            <TableHead className="min-w-[5rem]">ID</TableHead>
+            {/* <TableHead className="min-w-[5rem]">ID</TableHead> */}
             <TableHead className="min-w-[10rem]">Category</TableHead>
             <TableHead className="min-w-[6rem]">Code</TableHead>
             <TableHead className="min-w-[12rem]">Name</TableHead>
@@ -66,9 +66,9 @@ const MenuDetailsTable = ({
                 <TableCell className="text-muted-foreground">
                   {index + 1}
                 </TableCell>
-                <TableCell className="tabular-nums text-muted-foreground">
+                {/* <TableCell className="tabular-nums text-muted-foreground">
                   {row.Item_Id}
-                </TableCell>
+                </TableCell> */}
                 <TableCell className="text-muted-foreground">
                   {row.Categ_Name}
                 </TableCell>

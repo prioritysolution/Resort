@@ -139,6 +139,8 @@ export const endPoints = {
     reservationNo
       ? `${createApi}/payment/list?reservation_no=${encodeURIComponent(reservationNo)}`
       : `${createApi}/payment/list`,
+  paymentDue: (reservationNo: string) =>
+    `${createApi}/payment/due?reservation_no=${encodeURIComponent(reservationNo)}`,
   paymentDetails: (id: number | string) =>
     `${createApi}/payment/details/${id}`,
   paymentAdd: `${createApi}/payment/add`,

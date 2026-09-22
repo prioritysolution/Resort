@@ -1,477 +1,238 @@
-"use client";
-import { useEffect, useState } from "react";
-import * as yup from "yup";
-import { useDispatch, useSelector } from "react-redux";
-import toast from "react-hot-toast";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { IoPrint, IoSearch } from "react-icons/io5";
-import { useIssueMembership } from "@/container/membership/issueMembership/Hooks";
-import MemberSearchTable from "../tables/MemberSearchTable";
-import { ClipLoader } from "react-spinners";
-import { DatePickerField } from "../formFields/DatePickerField";
-import { cn } from "@/lib/utils";
-import getCookieData from "@/utils/getCookieData";
-import { getMemberDataByName } from "@/container/membership/issueMembership/IssueMembershipReducer";
-import { format, getYear } from "date-fns";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+# Frontend: Checkout & Payment APIs
 
-const parseFlexDate = (dStr) => {
-  if (!dStr) return new Date();
-  if (dStr instanceof Date) return dStr;
-  const parts = dStr.split(/[-/]/);
-  if (parts.length === 3) {
-    if (parts[0].length === 4) {
-      return new Date(
-        parseInt(parts[0], 10),
-        parseInt(parts[1], 10) - 1,
-        parseInt(parts[2].split("T")[0], 10),
-      );
-    }
-    if (parts[2].split("T")[0].length === 4) {
-      return new Date(
-        parseInt(parts[2].split("T")[0], 10),
-        parseInt(parts[1], 10) - 1,
-        parseInt(parts[0], 10),
-      );
-    }
+Base URL: `http://116.193.129.229:8092`
+
+All endpoints below need:
+
+```
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+Get the token from `POST /api/login`.
+
+```json
+{
+  "user_code": "0112",
+  "password": "Password@123"
+}
+```
+
+---
+
+## Status values (do not mix these)
+
+| Field | Table | `1` | `0` |
+|---|---|---|---|
+| `Checkout_Status` | `trans_checkout_details` | Guest is checked out | No active checkout (not done, or cancelled) |
+| `Status` on a payment row | `trans_guest_collection` | Payment is active | Payment is deleted |
+| `Final_Coll` | `trans_guest_collection` | This payment closes the due | Partial payment |
+
+When opening the **payment** screen, use `Checkout_Status` (not payment `Status`).
+
+- `Checkout_Status = 1` → checkout is done. **Show due amount** and prefill remaining amount with `due_amount`.
+- `Checkout_Status = 0` → not checked out. **Do not show due amount** (`due_amount` is `null`). Guest can still add a collection.
+
+---
+
+## Flow
+
+1. Reservation save already inserts collection (`advance_amount + amount`).
+2. Call checkout summary, then checkout add. Checkout **does not** insert another collection. `Amount_Paid` = sum of existing payments.
+3. Checkout is allowed even if due is pending.
+4. Open payment with `reservation_no`. Read `checkout_status` + `due_amount`.
+5. Prefill remaining amount with `due_amount`. Guest may pay more than due.
+6. After payment, checkout `Amount_Paid` is updated. Due is calculated (not stored): `Due = Net_Amount - Amount_Paid` (minimum 0).
+
+---
+
+## Checkout APIs
+
+### 1. Summary (before checkout)
+
+`GET /api/checkout/summary?reservation_no=22260001`
+
+Use this to show the bill preview.
+
+Success `data` includes `Room_Bill`, `Room_Gst`, `Food_Bill`, `Food_Gst`, `Service_Bill`, `Service_Gst`, `Total_Bill`, `Total_Gst`, `Grand_Total`, `Amount_Paid`, `Round_Off`, `Net_Amount`, `Balance_Amount`.
+
+### 2. Add checkout
+
+`POST /api/checkout/add`
+
+```json
+{
+  "reservation_no": "22260001",
+  "checkout_date": "2026-10-06"
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `reservation_no` | yes | |
+| `checkout_date` | no | Must be after check-in. Defaults to today |
+| `amount` | no | unused for collection |
+| `mode` | no | unused for collection |
+
+On success, `Status` in checkout `data` is `1`.
+
+Errors:
+
+- Reservation not found
+- Checkout already exists for this reservation
+- Checkout date must be after check-in date
+
+### 3. List
+
+`GET /api/checkout/list`  
+`GET /api/checkout/list?reservation_no=22260001`
+
+Only active checkouts (`Status = 1`).
+
+### 4. Details
+
+`GET /api/checkout/details/{checkoutId}`
+
+### 5. Cancel checkout (soft delete)
+
+`DELETE /api/checkout/delete/{checkoutId}`
+
+Sets checkout `Status = 0`. That reservation can be checked out again.
+
+---
+
+## Payment APIs
+
+### 1. Due amount (open payment screen with this)
+
+`GET /api/payment/due?reservation_no=22260001`
+
+```json
+{
+  "Error_Code": 0,
+  "Message": "Due amount fetched successfully.",
+  "due_amount": 35860,
+  "checkout_status": 1,
+  "data": {
+    "Reservation_Id": 1,
+    "Reservation_No": "22260001",
+    "Guest_Name": "avinash",
+    "Net_Amount": 36960,
+    "Amount_Paid": 1100,
+    "Due_Amount": 35860,
+    "Checkout_Id": 7,
+    "Checkout_Status": 1
   }
-  const d = new Date(dStr);
-  return isNaN(d.getTime()) ? new Date() : d;
-};
+}
+```
 
-const MemberSearchForm = ({
-  handleSubmit,
-  showDate = false,
-  loading,
-  label = "Date",
-  resetTrigger,
-  isLoan = false,
-  hideNextButton = false,
-  className,
-  formLabel = "",
-  showLedger = false,
-  handleShowLedger,
-  insidePosition = false,
-  showDateFix = false,
-  disableNextButton = false,
-  anableRadio = "",
-}) => {
-  const { t } = useTranslation();
+Use `data.Due_Amount` as the remaining amount field. Use `data.Checkout_Status` to know if checkout is done.
 
-  const RadioData = [
-    { label: t("memberSearch.individualCustomer"), value: "1" },
-    { label: t("memberSearch.group"), value: "2" },
-    { label: t("memberSearch.institution"), value: "3" },
-    { label: t("memberSearch.staff"), value: "4" },
-  ];
+### 2. List
 
-  const startDate = getCookieData("fin_start_date");
+`GET /api/payment/list`  
+`GET /api/payment/list?reservation_no=22260001`
 
-  const endDate = getCookieData("fin_end_date");
-
-  const sidebarData = useSelector((state) => state.sidebar.sidebarData);
-
-  const dispatch = useDispatch();
-
-  const [dialougeOpen, setDialougeOpen] = useState(false);
-  const [isOpeningActive, setIsOpeningActive] = useState(false);
-  const [isDateChecked, setIsDateChecked] = useState(false);
-  const [selectedRadio, setSelectedRadio] = useState("1");
-
-  useEffect(() => {
-    if (anableRadio) {
-      setSelectedRadio(String(anableRadio));
+```json
+{
+  "Error_Code": 0,
+  "Message": "Payments fetched successfully.",
+  "due_amount": 35860,
+  "amount_paid": 1100,
+  "net_amount": 36960,
+  "checkout_status": 1,
+  "data": [
+    {
+      "Collection_Id": 11,
+      "Coll_Date": "2026-09-22",
+      "Reservation_No": "22260001",
+      "Coll_Amount": 1100,
+      "Coll_Mode": 1,
+      "Final_Coll": 0,
+      "Status": 1,
+      "Due_Amount": 35860,
+      "Checkout_Id": 7,
+      "Checkout_Status": 1
     }
-  }, [anableRadio]);
+  ]
+}
+```
 
-  const orgId = getCookieData("orgId");
-  const beg_date = getCookieData("beg_date");
+`data[].Status` is the **payment** row (1 = active). `checkout_status` / `Checkout_Status` is the **checkout**.
 
-  useEffect(() => {
-    if (window !== undefined)
-      setIsOpeningActive(
-        sidebarData?.some((item) => item?.title === "Opening"),
-      );
-  }, [sidebarData]);
+### 3. Add payment
 
-  const {
-    getMemberListDataLoading,
-    getMemberDataByNameApiCall,
-    currentMemberPage,
-    setCurrentMemberPage,
-    lastMemberPage,
-  } = useIssueMembership();
+`POST /api/payment/add`
 
-  useEffect(() => {
-    // Reset form when `resetTrigger` changes
-    if (isDateChecked) {
-      form.setValue("memberNo", "");
-      form.setValue("dialougeMemberName", "");
-    } else
-      form.reset({
-        date: beg_date ? parseFlexDate(beg_date) : null,
-        memberNo: "",
-        dialougeMemberName: "",
-      });
-  }, [resetTrigger]);
+```json
+{
+  "reservation_no": "22260001",
+  "coll_date": "2026-10-06",
+  "remaining_amount": 35860,
+  "coll_amount": 35860,
+  "coll_mode": 1,
+  "final_coll": false
+}
+```
 
-  const formSchema = yup.object({
-    date: yup
-      .date()
-      .nullable() // Allow null when not required
-      .test("is-required", "Date is required", function (value) {
-        // Use the global variable to determine if date is required
-        if (showDate) {
-          return value !== null && value !== undefined;
-        }
-        return true; // If not required, null is allowed
-      }),
-    // .test("is-between", "Invalid date", function (value) {
-    //   if (!value || !showDate) return true;
-    //   if (
-    //     beg_date &&
-    //     format(value, "yyyy-MM-dd") ===
-    //       format(parseFlexDate(beg_date), "yyyy-MM-dd")
-    //   ) {
-    //     return true;
-    //   } else {
-    //     const maxDate =
-    //       new Date(endDate) > new Date()
-    //         ? format(new Date(), "yyyy-MM-dd")
-    //         : endDate;
-    //     if (isLoan) return format(value, "yyyy-MM-dd") < startDate;
-    //     else
-    //       return (
-    //         format(value, "yyyy-MM-dd") >= startDate &&
-    //         format(value, "yyyy-MM-dd") <= maxDate
-    //       );
-    //   }
-    // }),
-    memberNo: yup.string().matches(/^\d{1,10}$/, "Enter a valid member no."),
-    dialougeMemberName: yup.string(),
-  });
-  const form = useForm({
-    resolver: yupResolver(formSchema),
-    defaultValues: {
-      date: beg_date ? parseFlexDate(beg_date) : null,
-      memberNo: "",
-      dialougeMemberName: "",
-    },
-  });
+| Field | Required | Notes |
+|---|---|---|
+| `reservation_no` | yes | |
+| `coll_date` | no | Defaults to today |
+| `remaining_amount` | yes* | Amount being paid now. Can exceed due |
+| `coll_amount` | no | Same as `remaining_amount` (alias). Send either |
+| `coll_mode` | yes | Payment mode id (`1` = as used in existing screens) |
+| `final_coll` | no | `false` = not final. If omitted, API sets `1` when paid amount >= due |
 
-  // Set date to beg_date when component loads
-  useEffect(() => {
-    if (beg_date) {
-      form.setValue("date", parseFlexDate(beg_date));
-    }
-  }, [beg_date, form]);
+Do **not** send checkout status in the add body. Read it from due/list.
 
-  const handleSearchMember = (e) => {
-    e?.preventDefault?.();
-    if (!orgId) return;
-    const name = form.getValues("dialougeMemberName");
-    if (!name) {
-      toast.error(t("memberSearch.pleaseEnterName"));
-      return;
-    }
-    // Search always starts from page 1
-    if (currentMemberPage === 1) {
-      getMemberDataByNameApiCall(orgId, 1, name, selectedRadio || "1");
-    } else {
-      setCurrentMemberPage(1);
-    }
-  };
+### 4. Details
 
-  const handleSelectClick = (data) => {
-    form.setValue("memberNo", data.CIF_No);
-    setDialougeOpen(false);
-  };
+`GET /api/payment/details/{collectionId}`
 
-  const memberDataByName = useSelector(
-    (state) => state?.issueMembership?.memberDataByName,
-  );
+Includes `Checkout_Status` on the payment row.
 
-  const handleDialogueOpenChange = (open) => {
-    if (open) {
-      form.setValue("dialougeMemberName", "");
-      setCurrentMemberPage(1);
-      dispatch(getMemberDataByName([]));
-    } else {
-      dispatch(getMemberDataByName([]));
-    }
-    setDialougeOpen(open);
-  };
+### 5. Update
 
-  // Pagination only — never auto-call on dialog open / Next / radio change
-  useEffect(() => {
-    if (!dialougeOpen || !orgId) return;
-    const name = form.getValues("dialougeMemberName");
-    if (!name) return;
-    getMemberDataByNameApiCall(
-      orgId,
-      currentMemberPage,
-      name,
-      selectedRadio || "1",
-    );
-  }, [currentMemberPage]);
+`PUT /api/payment/update/{collectionId}`
 
-  // Clear results when customer type radio changes; user must click Search again
-  useEffect(() => {
-    if (!dialougeOpen) return;
-    dispatch(getMemberDataByName([]));
-    setCurrentMemberPage(1);
-  }, [selectedRadio]);
+```json
+{
+  "reservation_no": "22260001",
+  "coll_date": "2026-10-06",
+  "coll_amount": 2000,
+  "coll_mode": 1,
+  "final_coll": false
+}
+```
 
-  return (
-    <div
-      className={cn(
-        "w-full border border-primary rounded-lg p-2 sm:px-5 lg:px-10",
-        className,
-      )}
-    >
-      <Form {...form}>
-        <form autoComplete="off" className={`w-full`}>
-          <Dialog open={dialougeOpen} onOpenChange={handleDialogueOpenChange}>
-            <div
-              className={cn(
-                "w-full flex flex-col lg:flex-row items-center justify-between gap-x-10 gap-y-2 lg:gap-y-5  ",
-                { "gap-x-2": insidePosition },
-              )}
-            >
-              {formLabel ? (
-                <h1 className="text-lg font-semibold text-nowrap">
-                  {formLabel}
-                </h1>
-              ) : null}
-              {showDate && (
-                <div className="flex items-center gap-2 w-full">
-                  <DatePickerField
-                    control={form.control}
-                    name="date"
-                    label={label === "Date" ? t("common.date") : label}
-                    // startYear={
-                    //   isLoan
-                    //     ? getYear(new Date(startDate))
-                    //     : getYear(new Date()) - 100
-                    // }
-                    // endYear={
-                    //   isLoan
-                    //     ? getYear(new Date(startDate))
-                    //     : getYear(new Date(endDate))
-                    // }
-                    // disabledDateAfter={
-                    //   isLoan
-                    //     ? new Date(startDate).setDate(
-                    //         new Date(startDate).getDate() - 1,
-                    //       )
-                    //     : new Date(endDate) > new Date()
-                    //       ? new Date()
-                    //       : new Date(endDate)
-                    // }
-                    // isBackDate={isLoan}
-                    // onPopover="true"
-                    defaultValue={parseFlexDate(beg_date)}
-                    disabled={true}
-                  />
-                  {isOpeningActive && showDateFix && (
-                    <Checkbox
-                      checked={isDateChecked}
-                      onCheckedChange={setIsDateChecked}
-                      className="mt-8 w-5 h-5"
-                    />
-                  )}
-                </div>
-              )}
+### 6. Delete (soft)
 
-              <FormField
-                control={form.control}
-                name="memberNo"
-                render={({ field }) => (
-                  <FormItem className={cn("w-full", { "": !showDate })}>
-                    <FormLabel>{t("memberSearch.cifRefNo")}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-col lg:flex-row items-center gap-x-10 gap-2 w-full">
-                        <div className=" w-full h-full">
-                          <div className=" w-full relative ">
-                            <Input
-                              placeholder={t("memberSearch.memberNoPlaceholder")}
-                              className="w-full"
-                              type="number"
-                              onInput={(e) => {
-                                if (e.target.value.length > 10) {
-                                  e.target.value = e.target.value.slice(0, 10);
-                                }
-                              }}
-                              {...field}
-                            />
-                            <div className="absolute right-0 top-0 py-3 px-3">
-                              <DialogTrigger
-                                asChild
-                                className="cursor-pointer text-lg"
-                              >
-                                <IoSearch />
-                              </DialogTrigger>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </div>
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+`DELETE /api/payment/delete/{collectionId}`
 
-              <div
-                className={cn("w-full flex justify-start self-end gap-5 ", {
-                  "w-fit": insidePosition,
-                })}
-              >
-                <Button
-                  type=""
-                  className={cn(
-                    "px-5 w-1/2",
-                    { hidden: hideNextButton },
-                    { "w-full": insidePosition },
-                  )}
-                  disabled={loading || Boolean(disableNextButton)}
-                  onClick={form.handleSubmit(handleSubmit)}
-                >
-                  {loading ? (
-                    <ClipLoader
-                      color="#d7e6f4"
-                      size={20}
-                      speedMultiplier={0.7}
-                    />
-                  ) : (
-                    t("memberSearch.next")
-                  )}
-                </Button>
+Sets payment `Status = 0` and recalculates checkout `Amount_Paid`.
 
-                {showLedger && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div
-                          onClick={handleShowLedger}
-                          className="p-2 px-5 w-1/2 text-2xl bg-primary rounded-md text-white cursor-pointer flex items-center justify-center text-center"
-                        >
-                          <IoPrint />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t("memberSearch.viewLedger")}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-            </div>
-            <DialogContent className="w-[calc(100vw-1rem)] max-w-[1000px] h-[min(90dvh,640px)] sm:h-auto sm:max-h-[85vh] p-3 sm:p-6 gap-3 overflow-hidden flex flex-col rounded-lg">
-              <DialogHeader className="shrink-0 pr-8 text-left">
-                <DialogTitle className="text-base sm:text-lg">
-                  {t("memberSearch.searchMembers")}
-                </DialogTitle>
-              </DialogHeader>
+---
 
-              <RadioGroup
-                defaultValue="1"
-                value={selectedRadio}
-                onValueChange={setSelectedRadio}
-                className="flex flex-wrap items-center gap-x-3 gap-y-2 shrink-0"
-              >
-                {RadioData.map((item, index) => (
-                  <div className="flex items-center gap-2 min-w-0" key={index}>
-                    <RadioGroupItem
-                      value={item.value}
-                      id={item.value}
-                      disabled={
-                        !!anableRadio && item.value !== String(anableRadio)
-                      }
-                    />
-                    <Label
-                      htmlFor={item.value}
-                      className="text-xs sm:text-sm whitespace-nowrap"
-                    >
-                      {item.label}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+## Frontend remaining-amount field
 
-              <div className="w-full min-h-0 flex-1 flex flex-col gap-3 overflow-hidden">
-                <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-x-4 shrink-0">
-                  <FormField
-                    control={form.control}
-                    name="dialougeMemberName"
-                    render={({ field }) => (
-                      <FormItem className="w-full min-w-0">
-                        <FormLabel>
-                          {RadioData.find(
-                            (item) => item.value === selectedRadio,
-                          )?.label || t("memberSearch.memberName")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            autoComplete="off"
-                            placeholder={t("memberSearch.searchByMemberName")}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    className="w-full sm:w-auto px-6 sm:px-10 shrink-0"
-                    onClick={handleSearchMember}
-                  >
-                    {t("memberSearch.search")}
-                  </Button>
-                </div>
-                <div className="w-full min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-                  <MemberSearchTable
-                    loading={getMemberListDataLoading}
-                    data={memberDataByName}
-                    handleSelectData={handleSelectClick}
-                    currentMemberPage={currentMemberPage}
-                    setCurrentMemberPage={setCurrentMemberPage}
-                    lastMemberPage={lastMemberPage}
-                  />
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </form>
-      </Form>
-    </div>
-  );
-};
-export default MemberSearchForm;
+1. Call `GET /api/payment/due?reservation_no={no}`.
+2. If `checkout_status === 1`, **show due** and set remaining amount = `due_amount`.
+3. If `checkout_status === 0`, **hide due**. Remaining amount is a normal collection (not against a bill).
+4. Submit add payment with `remaining_amount`.
+5. Refresh due/list. `Amount_Paid` on checkout is updated automatically.
+
+---
+
+## Error shape
+
+```json
+{
+  "Error_Code": 1,
+  "Message": "Reservation not found.",
+  "data": null
+}
+```
+
+`Error_Code = 0` is success.

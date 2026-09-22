@@ -1,11 +1,16 @@
 "use client";
+
 import { useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useGuestCrud } from "@/container/guest/shared/useGuestCrud";
-import { isApiSuccess } from "@/container/guest/shared/types";
+import {
+  apiMessage,
+  isApiSuccess,
+} from "@/container/guest/shared/types";
 import {
   addCheckoutAPI,
   deleteCheckoutAPI,
@@ -13,27 +18,47 @@ import {
   getCheckoutListAPI,
   getCheckoutSummaryAPI,
 } from "./CheckoutApis";
-import type {
-  Checkout,
-  CheckoutFormValues,
-  CheckoutPayload,
-  CheckoutSummary,
+import {
+  checkoutDateOf,
+  type Checkout,
+  type CheckoutFormValues,
+  type CheckoutPayload,
+  type CheckoutSummary,
 } from "./types";
+
+const toApiDate = (value: string | Date | undefined | null) => {
+  if (!value) return "";
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : format(value, "yyyy-MM-dd");
+  }
+  const s = String(value).trim();
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s : format(d, "yyyy-MM-dd");
+};
+
 const emptyValues: CheckoutFormValues = {
   reservation_no: "",
   checkout_date: "",
 };
+
 const schema = yup.object({
-  reservation_no: yup.string().required(),
-  checkout_date: yup.string().default(""),
+  reservation_no: yup.string().required("Reservation number is required"),
+  checkout_date: yup.mixed<string | Date>().default(""),
 });
+
 export function useCheckout() {
   const form = useForm<CheckoutFormValues>({
-    resolver: yupResolver(schema) as Resolver<CheckoutFormValues>,
+    resolver: yupResolver(schema) as unknown as Resolver<CheckoutFormValues>,
     defaultValues: emptyValues,
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
+
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+
   const crud = useGuestCrud<Checkout, CheckoutFormValues, CheckoutPayload>({
     form,
     emptyValues,
@@ -46,13 +71,17 @@ export function useCheckout() {
     entityName: "checkouts",
     toValues: (r) => ({
       reservation_no: r.Reservation_No || "",
-      checkout_date: r.Checkout_Date || "",
+      checkout_date: checkoutDateOf(r),
     }),
-    toPayload: (v) => ({
-      reservation_no: v.reservation_no.trim(),
-      ...(v.checkout_date ? { checkout_date: v.checkout_date } : {}),
-    }),
+    toPayload: (v) => {
+      const date = toApiDate(v.checkout_date);
+      return {
+        reservation_no: v.reservation_no.trim(),
+        ...(date ? { checkout_date: date } : {}),
+      };
+    },
   });
+
   const previewSummary = async () => {
     const no = form.getValues("reservation_no").trim();
     if (!no) {
@@ -64,25 +93,27 @@ export function useCheckout() {
     setSummaryLoading(true);
     try {
       const response = await getCheckoutSummaryAPI(no);
-      if (isApiSuccess(response) && response.data) setSummary(response.data);
-      else {
+      if (isApiSuccess(response) && response.data) {
+        setSummary(response.data as CheckoutSummary);
+      } else {
         setSummary(null);
-        toast.error(
-          response.Message || response.message || "Unable to load summary",
-        );
+        toast.error(apiMessage(response, "Unable to load summary"));
       }
     } finally {
       setSummaryLoading(false);
     }
   };
+
   const openCreate = () => {
     setSummary(null);
     crud.openCreate();
   };
+
   const closeDialog = () => {
     setSummary(null);
     crud.closeDialog();
   };
+
   return {
     ...crud,
     openCreate,

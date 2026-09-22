@@ -1,670 +1,477 @@
-# Resort Frontend API
+"use client";
+import { useEffect, useState } from "react";
+import * as yup from "yup";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { IoPrint, IoSearch } from "react-icons/io5";
+import { useIssueMembership } from "@/container/membership/issueMembership/Hooks";
+import MemberSearchTable from "../tables/MemberSearchTable";
+import { ClipLoader } from "react-spinners";
+import { DatePickerField } from "../formFields/DatePickerField";
+import { cn } from "@/lib/utils";
+import getCookieData from "@/utils/getCookieData";
+import { getMemberDataByName } from "@/container/membership/issueMembership/IssueMembershipReducer";
+import { format, getYear } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-Give this file to frontend. All paths are relative to the base URL.
-
-**Base URL:** `http://116.193.129.229:8092/api`
-
----
-
-## How to call
-
-Always send **raw JSON**. Do not use `form-data` or `x-www-form-urlencoded`.
-
-```
-Accept: application/json
-Content-Type: application/json
-Authorization: Bearer {token}
-```
-
-`Authorization` is required on every route except `POST /login`.
-
-### Status codes
-
-| Code | Meaning |
-|---|---|
-| `200` | Success (list, details, update, delete) |
-| `201` | Created (add) |
-| `400` | Business error (`Error_Code: 1`) |
-| `401` | Missing or invalid token |
-| `404` | Record not found |
-| `422` | Validation error |
-
-### Success (create / update / delete)
-
-```json
-{
-  "Error_Code": 0,
-  "Message": "Reservation created successfully.",
-  "data": {}
-}
-```
-
-### Business error
-
-```json
-{
-  "Error_Code": 1,
-  "Message": "Room is already booked.",
-  "data": null
-}
-```
-
-If `Error_Code` is `1`, show `Message` to the user.
-
-### Validation error `422`
-
-```json
-{
-  "message": "The given data was invalid.",
-  "errors": {
-    "guest_name": ["The guest name field is required."]
+const parseFlexDate = (dStr) => {
+  if (!dStr) return new Date();
+  if (dStr instanceof Date) return dStr;
+  const parts = dStr.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return new Date(
+        parseInt(parts[0], 10),
+        parseInt(parts[1], 10) - 1,
+        parseInt(parts[2].split("T")[0], 10),
+      );
+    }
+    if (parts[2].split("T")[0].length === 4) {
+      return new Date(
+        parseInt(parts[2].split("T")[0], 10),
+        parseInt(parts[1], 10) - 1,
+        parseInt(parts[0], 10),
+      );
+    }
   }
-}
-```
-
-### Unauthenticated `401`
-
-```json
-{ "message": "Unauthenticated." }
-```
-
----
-
-## Guest stay flow
-
-```
-Login
-  → Booking (optional)
-  → Reservation (check-in + planned checkout + rooms)
-  → Food / service / payment while in-house
-  → Checkout (room bill is calculated here)
-```
-
-- Reservation stores stay dates only. Room **bill / GST / total** stay `null` until checkout.
-- After checkout, food order add is rejected.
-- Only one active checkout per reservation.
-
----
-
-## Auth
-
-### Login — `POST /login` (public)
-
-```json
-{
-  "user_code": "0110",
-  "password": "password"
-}
-```
-
-`200`
-
-```json
-{
-  "message": "Login successful.",
-  "token": "1|abc123...",
-  "token_type": "Bearer",
-  "user": {
-    "user_id": 1,
-    "org_id": 1,
-    "branch_id": 1,
-    "user_name": "Rajsekhar Roy Chowdhury",
-    "short_name": "Rajsekhar",
-    "user_code": "0110",
-    "is_active": true,
-    "status": "LogIn",
-    "branch_code": "01",
-    "branch_name": "SONKUPI",
-    "resort_name": "SONKUPI FOREST RESORT"
-  }
-}
-```
-
-Save `token` and send it as `Bearer {token}` on all later calls.
-
----
-
-## Sidebar menus
-
-### `GET /menus`
-
-Use this to build the left menu. Response key is `menus` (not `data`).
-
----
-
-## Masters
-
-Pattern for most masters:
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/{module}/list` |
-| Search | `GET` | `/{module}/search?keyword=` |
-| Add | `POST` | `/{module}/add` |
-| Update | `PUT` | `/{module}/update/{id}` |
-| Delete | `DELETE` | `/{module}/delete/{id}` |
-
-### Room type — `/room-type`
-
-Add:
-
-```json
-{
-  "room_tname": "Deluxe Cottage",
-  "room_charges": 3750,
-  "extra_bed_charges": 500
-}
-```
-
-| Field | Required |
-|---|---|
-| `room_tname` | Yes |
-| `room_charges` | Yes |
-| `extra_bed_charges` | No |
-
-List fields: `Room_TId`, `Room_TName`, `Room_Charges`, `Extra_Bed_Charges`, `Status`.
-
-### Room details — `/room-details`
-
-List: optional `?room_type=1`.
-
-Add:
-
-```json
-{
-  "room_type": 1,
-  "room_no": "112",
-  "room_desc": "Cottage",
-  "adult": 2,
-  "child": 1,
-  "booking_allowed": 1
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `room_type` | Yes | `Room_TId` from room type |
-| `room_no` | Yes | |
-| `adult` | Yes | min 1 |
-| `room_desc` | No | |
-| `child` | No | |
-| `booking_allowed` | No | `1` = can reserve, `0` = blocked. Default `1`. Master flag only; reservation does not change it. |
-
-### Price manager — regular — `/price-manager/regular`
-
-One regular rate per room type.
-
-```json
-{
-  "room_tid": 1,
-  "rate_mon": 3750,
-  "rate_tue": 3750,
-  "rate_wed": 3750,
-  "rate_thu": 3750,
-  "rate_fri": 4000,
-  "rate_sat": 4500,
-  "rate_sun": 4500
-}
-```
-
-All weekday rates are required.
-
-### Price manager — special — `/price-manager/special`
-
-```json
-{
-  "room_tid": 1,
-  "event_name": "Durga Pujo 2026",
-  "date_from": "2026-10-17",
-  "date_upto": "2026-10-21",
-  "rate_spl": 4250
-}
-```
-
-Date ranges for the same room type cannot overlap.
-
-### Menu category — `/menu-category`
-
-```json
-{ "categ_name": "Breakfast" }
-```
-
-Category name is unique.
-
-### Menu details — `/menu-details`
-
-List: optional `?category_id=1`. Use `Item_Id` as `menu_id` on food orders.
-
-```json
-{
-  "category_id": 1,
-  "menu_code": 101,
-  "menu_name": "Toast Butter/Jam",
-  "menu_shortnm": "Toast",
-  "menu_desc": "4 Pcs",
-  "rate": 45
-}
-```
-
-| Field | Required |
-|---|---|
-| `category_id` | Yes |
-| `menu_name` | Yes |
-| `rate` | Yes |
-| `menu_code` / `menu_shortnm` / `menu_desc` | No |
-
-Menu name is unique per category. `menu_code` is unique.
-
-### Paid service — `/paid-service`
-
-Use `Service_Id` as `service_id` on service orders.
-
-```json
-{
-  "service_name": "EV Charging/Hour",
-  "serv_desc": "Per Hour Basis",
-  "serv_charges": 150
-}
-```
-
-### Travel agent — `/travel-agent`
-
-Use `Agent_Id` as `agent_id` on booking / reservation.
-
-```json
-{
-  "agent_name": "Rajesh Travels",
-  "org_name": "Rajesh Tours & Travels",
-  "address": "Kolkata",
-  "contact_no": "9876543210",
-  "gst_no": null,
-  "pan_no": null,
-  "comm_prcnt": 10
-}
-```
-
-Only `agent_name` is required. Delete is blocked if the agent is used on a booking or reservation.
-
-### Staff profile — `/staff-profile`
-
-```json
-{
-  "staff_name": "Ramesh Kumar",
-  "nick_name": "Ramesh",
-  "guardian_name": "Suresh Kumar",
-  "address": "Purulia",
-  "cont_no": "9876543210",
-  "gender_cd": 1,
-  "age": "28",
-  "aadhar_no": "1234-5678-9012",
-  "join_date": "2024-01-01",
-  "designation": "Manager",
-  "salary": 15000,
-  "bank_dtls": "SBI 123456",
-  "remarks": null
-}
-```
-
-Only `staff_name` is required. `gender_cd`: `1` Male, `2` Female, `3` Others.
-
-### Users — `/users`
-
-Add:
-
-```json
-{
-  "org_id": 1,
-  "branch_id": 1,
-  "user_name": "Sourav Mondal",
-  "short_name": "Sourav",
-  "user_code": "0112",
-  "password": "Password@123"
-}
-```
-
-All fields required. `user_code` is unique. Password cannot be changed on update. You cannot delete your own account.
-
----
-
-## Booking
-
-Number format: `DDYY####` (example `19260001`). Financial year starts 1 April.
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/booking/list` |
-| Details | `GET` | `/booking/details/{bookingNo}` |
-| Add | `POST` | `/booking/add` |
-| Update | `PUT` | `/booking/update/{bookingId}` |
-| Cancel | `PUT` | `/booking/cancel/{bookingId}` |
-
-List returns bookings created by the logged-in user. Details uses **booking number**, update/cancel use **booking id**.
-
-Add:
-
-```json
-{
-  "guest_name": "Rajesh Kumar",
-  "contact_no": "9876543210",
-  "room_tid": 1,
-  "no_of_room": 2,
-  "checkin_date": "2026-10-01",
-  "stay_duration": 3,
-  "exp_chkout_dt": "2026-10-04",
-  "agent_id": null,
-  "note": "Early check-in requested"
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `guest_name` | Yes | |
-| `contact_no` | Yes | max 15 |
-| `room_tid` | Yes | room type, not a room |
-| `no_of_room` | Yes | |
-| `checkin_date` | Yes | |
-| `stay_duration` | Yes | nights |
-| `exp_chkout_dt` | No | auto = check-in + stay duration |
-| `agent_id` | No | |
-| `note` | No | |
-
-Booking does **not** allot a physical room. That happens on reservation.
-
----
-
-## Reservation
-
-Number format: same as booking (`DDYY####`).
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/reservation/list` optional `?booking_no=` |
-| Details | `GET` | `/reservation/details/{reservationNo}` |
-| Add | `POST` | `/reservation/add` |
-| Update | `PUT` | `/reservation/update/{reservationId}` |
-
-Details uses **reservation number**. Update uses **reservation id**.
-
-Details returns `reservation` + `rooms`. On a new reservation, rooms look like:
-
-```json
-{
-  "From_Date": "2026-10-01",
-  "Upto_Date": "2026-10-03",
-  "Bill_Amount": null,
-  "Gst_Amount": null,
-  "Tot_Amount": null
-}
-```
-
-`Upto_Date` is the planned checkout. Amounts stay null until checkout.
-
-### Add — walk-in
-
-```json
-{
-  "guest_name": "Rajesh Kumar",
-  "contact_no": "9876543210",
-  "aadhar_no": "1234-5678-9012",
-  "address_1": "Park Street, Kolkata",
-  "address_2": "West Bengal - 700016",
-  "checkin_date": "2026-10-01",
-  "checkout_date": "2026-10-03",
-  "adult_no": 2,
-  "child_no": 1,
-  "room_ids": [1],
-  "extra_bed_no": 0,
-  "agent_id": 1,
-  "special_request": "Early check-in requested"
-}
-```
-
-### Add — from a booking
-
-```json
-{
-  "booking_no": "19260001",
-  "guest_name": "Rajesh Kumar",
-  "contact_no": "9876543210",
-  "checkin_date": "2026-11-01",
-  "checkout_date": "2026-11-03",
-  "adult_no": 2,
-  "child_no": 0,
-  "room_id": 12,
-  "extra_bed_no": 0
-}
-```
-
-### Add — multiple rooms
-
-```json
-{
-  "guest_name": "Rajesh Kumar",
-  "contact_no": "9876543210",
-  "checkin_date": "2026-11-10",
-  "checkout_date": "2026-11-12",
-  "adult_no": 2,
-  "child_no": 0,
-  "room_ids": [13, 14],
-  "extra_bed_no": 0
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `guest_name` | Yes | |
-| `contact_no` | Yes | max 25 |
-| `checkin_date` | Yes | |
-| `checkout_date` | Yes | must be after check-in; stored as room `Upto_Date` |
-| `adult_no` | Yes | min 1 |
-| `room_id` **or** `room_ids` | Yes | send one of them |
-| `booking_no` | No | omit for walk-in |
-| `no_of_room` | No | if sent, must match selected rooms |
-| `child_no` | No | |
-| `extra_bed_no` | No | |
-| `agent_id` | No | |
-| `aadhar_no` / `address_1` / `address_2` / `special_request` | No | |
-
-Rules the UI should handle:
-
-- `Booking_Allowed = 0` → room cannot be reserved.
-- Overlapping stay on the same room → `Room is already booked.` Same-day checkout + next check-in is allowed.
-- Do **not** send bill / GST / total on reservation add.
-- Do **not** expect `Booking_Allowed` to flip after reserve.
-
-Success `201` includes `data` (reservation) and `rooms`.
-
----
-
-## Payment
-
-Writes a collection against a reservation.
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/payment/list` optional `?reservation_no=` |
-| Details | `GET` | `/payment/details/{collectionId}` |
-| Add | `POST` | `/payment/add` |
-| Update | `PUT` | `/payment/update/{collectionId}` |
-| Delete | `DELETE` | `/payment/delete/{collectionId}` |
-
-Add (Body = **raw JSON**):
-
-```json
-{
-  "reservation_no": "19260001",
-  "coll_date": "2026-10-01",
-  "coll_amount": 500,
-  "coll_mode": 1,
-  "final_coll": false
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `reservation_no` | Yes | |
-| `coll_amount` | Yes | number, min `0.01` |
-| `coll_mode` | Yes | integer, min `1` |
-| `coll_date` | No | defaults today |
-| `final_coll` | No | boolean |
-
----
-
-## Food order
-
-GST is calculated on the server (`FoodBill_GST`).
-
-`Order_Status`: `0` Not delivered, `1` Delivered.
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/food-order/list` optional `?reservation_no=` |
-| Details | `GET` | `/food-order/details/{foodOrdId}` |
-| Add | `POST` | `/food-order/add` |
-| Update | `PUT` | `/food-order/update/{foodOrdId}` |
-| Delete | `DELETE` | `/food-order/delete/{foodOrdId}` |
-
-Add:
-
-```json
-{
-  "reservation_no": "19260001",
-  "order_date": "2026-10-01",
-  "order_time": "14:30",
-  "room_service": true,
-  "room_id": 1,
-  "special_ins": "Less spicy",
-  "items": [
-    { "menu_id": 1, "quantity": 2 },
-    { "menu_id": 2, "quantity": 1 }
-  ]
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `reservation_no` | Yes | |
-| `items` | Yes | at least one |
-| `items.*.menu_id` | Yes | `Item_Id` from menu-details |
-| `items.*.quantity` | Yes | min 1 |
-| `order_date` / `order_time` | No | |
-| `room_service` | No | boolean |
-| `room_id` | No | |
-| `special_ins` | No | max 100 |
-
-If the reservation is already checked out:
-
-```json
-{
-  "Error_Code": 1,
-  "Message": "Reservation already checked out.",
-  "data": null
-}
-```
-
-Mark delivered:
-
-```json
-{
-  "order_status": 1,
-  "delivered_by": 1,
-  "special_ins": "Delivered"
-}
-```
-
----
-
-## Service order
-
-GST is calculated on the server (`OthrSrv_GST`).
-
-`Order_Status`: `0` Booked, `1` Complete.
-
-| Action | Method | Path |
-|---|---|---|
-| List | `GET` | `/service-order/list` optional `?reservation_no=` |
-| Details | `GET` | `/service-order/details/{servOrdId}` |
-| Add | `POST` | `/service-order/add` |
-| Update | `PUT` | `/service-order/update/{servOrdId}` |
-| Delete | `DELETE` | `/service-order/delete/{servOrdId}` |
-
-Add:
-
-```json
-{
-  "reservation_no": "19260001",
-  "order_date": "2026-10-01",
-  "service_id": 1,
-  "quantity": 2,
-  "remarks": "Evening"
-}
-```
-
-| Field | Required |
-|---|---|
-| `reservation_no` | Yes |
-| `service_id` | Yes (`Service_Id` from paid-service) |
-| `quantity` | No (default 1) |
-| `order_date` | No |
-| `remarks` | No |
-
----
-
-## Checkout
-
-This is where the **room bill** is calculated (regular / special rates + extra bed + GST). It writes amounts on allotted rooms and creates the checkout bill.
-
-Bill number format: `B` + `DDYY####` (example `B18260001`).
-
-| Action | Method | Path |
-|---|---|---|
-| Summary | `GET` | `/checkout/summary?reservation_no=` |
-| List | `GET` | `/checkout/list` optional `?reservation_no=` |
-| Details | `GET` | `/checkout/details/{checkoutId}` |
-| Add | `POST` | `/checkout/add` |
-| Cancel | `DELETE` | `/checkout/delete/{checkoutId}` |
-
-Call summary before checkout to preview room + food + service + payments.
-
-Add:
-
-```json
-{
-  "reservation_no": "19260001",
-  "checkout_date": "2026-10-03"
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `reservation_no` | Yes | |
-| `checkout_date` | No | defaults today; must be after check-in |
-
-Checkout date on this API is the **actual** checkout. Reservation `checkout_date` was only the planned stay.
-
-Only one active checkout per reservation. Cancel sets `Status = 0`.
-
----
-
-## Endpoint list
-
-| Method | Endpoint | Auth |
-|---|---|---|
-| POST | `/login` | No |
-| GET | `/menus` | Yes |
-| GET/POST/PUT/DELETE | `/room-type/*` | Yes |
-| GET/POST/PUT/DELETE | `/room-details/*` | Yes |
-| GET/POST/PUT/DELETE | `/price-manager/regular/*` | Yes |
-| GET/POST/PUT/DELETE | `/price-manager/special/*` | Yes |
-| GET/POST/PUT/DELETE | `/menu-category/*` | Yes |
-| GET/POST/PUT/DELETE | `/menu-details/*` | Yes |
-| GET/POST/PUT/DELETE | `/paid-service/*` | Yes |
-| GET/POST/PUT/DELETE | `/travel-agent/*` | Yes |
-| GET/POST/PUT/DELETE | `/staff-profile/*` | Yes |
-| GET/POST/PUT/DELETE | `/users/*` | Yes |
-| GET/POST/PUT | `/booking/*` | Yes |
-| GET/POST/PUT | `/reservation/*` | Yes |
-| GET/POST/PUT/DELETE | `/payment/*` | Yes |
-| GET/POST/PUT/DELETE | `/food-order/*` | Yes |
-| GET/POST/PUT/DELETE | `/service-order/*` | Yes |
-| GET/POST/DELETE | `/checkout/*` | Yes |
+  const d = new Date(dStr);
+  return isNaN(d.getTime()) ? new Date() : d;
+};
+
+const MemberSearchForm = ({
+  handleSubmit,
+  showDate = false,
+  loading,
+  label = "Date",
+  resetTrigger,
+  isLoan = false,
+  hideNextButton = false,
+  className,
+  formLabel = "",
+  showLedger = false,
+  handleShowLedger,
+  insidePosition = false,
+  showDateFix = false,
+  disableNextButton = false,
+  anableRadio = "",
+}) => {
+  const { t } = useTranslation();
+
+  const RadioData = [
+    { label: t("memberSearch.individualCustomer"), value: "1" },
+    { label: t("memberSearch.group"), value: "2" },
+    { label: t("memberSearch.institution"), value: "3" },
+    { label: t("memberSearch.staff"), value: "4" },
+  ];
+
+  const startDate = getCookieData("fin_start_date");
+
+  const endDate = getCookieData("fin_end_date");
+
+  const sidebarData = useSelector((state) => state.sidebar.sidebarData);
+
+  const dispatch = useDispatch();
+
+  const [dialougeOpen, setDialougeOpen] = useState(false);
+  const [isOpeningActive, setIsOpeningActive] = useState(false);
+  const [isDateChecked, setIsDateChecked] = useState(false);
+  const [selectedRadio, setSelectedRadio] = useState("1");
+
+  useEffect(() => {
+    if (anableRadio) {
+      setSelectedRadio(String(anableRadio));
+    }
+  }, [anableRadio]);
+
+  const orgId = getCookieData("orgId");
+  const beg_date = getCookieData("beg_date");
+
+  useEffect(() => {
+    if (window !== undefined)
+      setIsOpeningActive(
+        sidebarData?.some((item) => item?.title === "Opening"),
+      );
+  }, [sidebarData]);
+
+  const {
+    getMemberListDataLoading,
+    getMemberDataByNameApiCall,
+    currentMemberPage,
+    setCurrentMemberPage,
+    lastMemberPage,
+  } = useIssueMembership();
+
+  useEffect(() => {
+    // Reset form when `resetTrigger` changes
+    if (isDateChecked) {
+      form.setValue("memberNo", "");
+      form.setValue("dialougeMemberName", "");
+    } else
+      form.reset({
+        date: beg_date ? parseFlexDate(beg_date) : null,
+        memberNo: "",
+        dialougeMemberName: "",
+      });
+  }, [resetTrigger]);
+
+  const formSchema = yup.object({
+    date: yup
+      .date()
+      .nullable() // Allow null when not required
+      .test("is-required", "Date is required", function (value) {
+        // Use the global variable to determine if date is required
+        if (showDate) {
+          return value !== null && value !== undefined;
+        }
+        return true; // If not required, null is allowed
+      }),
+    // .test("is-between", "Invalid date", function (value) {
+    //   if (!value || !showDate) return true;
+    //   if (
+    //     beg_date &&
+    //     format(value, "yyyy-MM-dd") ===
+    //       format(parseFlexDate(beg_date), "yyyy-MM-dd")
+    //   ) {
+    //     return true;
+    //   } else {
+    //     const maxDate =
+    //       new Date(endDate) > new Date()
+    //         ? format(new Date(), "yyyy-MM-dd")
+    //         : endDate;
+    //     if (isLoan) return format(value, "yyyy-MM-dd") < startDate;
+    //     else
+    //       return (
+    //         format(value, "yyyy-MM-dd") >= startDate &&
+    //         format(value, "yyyy-MM-dd") <= maxDate
+    //       );
+    //   }
+    // }),
+    memberNo: yup.string().matches(/^\d{1,10}$/, "Enter a valid member no."),
+    dialougeMemberName: yup.string(),
+  });
+  const form = useForm({
+    resolver: yupResolver(formSchema),
+    defaultValues: {
+      date: beg_date ? parseFlexDate(beg_date) : null,
+      memberNo: "",
+      dialougeMemberName: "",
+    },
+  });
+
+  // Set date to beg_date when component loads
+  useEffect(() => {
+    if (beg_date) {
+      form.setValue("date", parseFlexDate(beg_date));
+    }
+  }, [beg_date, form]);
+
+  const handleSearchMember = (e) => {
+    e?.preventDefault?.();
+    if (!orgId) return;
+    const name = form.getValues("dialougeMemberName");
+    if (!name) {
+      toast.error(t("memberSearch.pleaseEnterName"));
+      return;
+    }
+    // Search always starts from page 1
+    if (currentMemberPage === 1) {
+      getMemberDataByNameApiCall(orgId, 1, name, selectedRadio || "1");
+    } else {
+      setCurrentMemberPage(1);
+    }
+  };
+
+  const handleSelectClick = (data) => {
+    form.setValue("memberNo", data.CIF_No);
+    setDialougeOpen(false);
+  };
+
+  const memberDataByName = useSelector(
+    (state) => state?.issueMembership?.memberDataByName,
+  );
+
+  const handleDialogueOpenChange = (open) => {
+    if (open) {
+      form.setValue("dialougeMemberName", "");
+      setCurrentMemberPage(1);
+      dispatch(getMemberDataByName([]));
+    } else {
+      dispatch(getMemberDataByName([]));
+    }
+    setDialougeOpen(open);
+  };
+
+  // Pagination only — never auto-call on dialog open / Next / radio change
+  useEffect(() => {
+    if (!dialougeOpen || !orgId) return;
+    const name = form.getValues("dialougeMemberName");
+    if (!name) return;
+    getMemberDataByNameApiCall(
+      orgId,
+      currentMemberPage,
+      name,
+      selectedRadio || "1",
+    );
+  }, [currentMemberPage]);
+
+  // Clear results when customer type radio changes; user must click Search again
+  useEffect(() => {
+    if (!dialougeOpen) return;
+    dispatch(getMemberDataByName([]));
+    setCurrentMemberPage(1);
+  }, [selectedRadio]);
+
+  return (
+    <div
+      className={cn(
+        "w-full border border-primary rounded-lg p-2 sm:px-5 lg:px-10",
+        className,
+      )}
+    >
+      <Form {...form}>
+        <form autoComplete="off" className={`w-full`}>
+          <Dialog open={dialougeOpen} onOpenChange={handleDialogueOpenChange}>
+            <div
+              className={cn(
+                "w-full flex flex-col lg:flex-row items-center justify-between gap-x-10 gap-y-2 lg:gap-y-5  ",
+                { "gap-x-2": insidePosition },
+              )}
+            >
+              {formLabel ? (
+                <h1 className="text-lg font-semibold text-nowrap">
+                  {formLabel}
+                </h1>
+              ) : null}
+              {showDate && (
+                <div className="flex items-center gap-2 w-full">
+                  <DatePickerField
+                    control={form.control}
+                    name="date"
+                    label={label === "Date" ? t("common.date") : label}
+                    // startYear={
+                    //   isLoan
+                    //     ? getYear(new Date(startDate))
+                    //     : getYear(new Date()) - 100
+                    // }
+                    // endYear={
+                    //   isLoan
+                    //     ? getYear(new Date(startDate))
+                    //     : getYear(new Date(endDate))
+                    // }
+                    // disabledDateAfter={
+                    //   isLoan
+                    //     ? new Date(startDate).setDate(
+                    //         new Date(startDate).getDate() - 1,
+                    //       )
+                    //     : new Date(endDate) > new Date()
+                    //       ? new Date()
+                    //       : new Date(endDate)
+                    // }
+                    // isBackDate={isLoan}
+                    // onPopover="true"
+                    defaultValue={parseFlexDate(beg_date)}
+                    disabled={true}
+                  />
+                  {isOpeningActive && showDateFix && (
+                    <Checkbox
+                      checked={isDateChecked}
+                      onCheckedChange={setIsDateChecked}
+                      className="mt-8 w-5 h-5"
+                    />
+                  )}
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="memberNo"
+                render={({ field }) => (
+                  <FormItem className={cn("w-full", { "": !showDate })}>
+                    <FormLabel>{t("memberSearch.cifRefNo")}</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col lg:flex-row items-center gap-x-10 gap-2 w-full">
+                        <div className=" w-full h-full">
+                          <div className=" w-full relative ">
+                            <Input
+                              placeholder={t("memberSearch.memberNoPlaceholder")}
+                              className="w-full"
+                              type="number"
+                              onInput={(e) => {
+                                if (e.target.value.length > 10) {
+                                  e.target.value = e.target.value.slice(0, 10);
+                                }
+                              }}
+                              {...field}
+                            />
+                            <div className="absolute right-0 top-0 py-3 px-3">
+                              <DialogTrigger
+                                asChild
+                                className="cursor-pointer text-lg"
+                              >
+                                <IoSearch />
+                              </DialogTrigger>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div
+                className={cn("w-full flex justify-start self-end gap-5 ", {
+                  "w-fit": insidePosition,
+                })}
+              >
+                <Button
+                  type=""
+                  className={cn(
+                    "px-5 w-1/2",
+                    { hidden: hideNextButton },
+                    { "w-full": insidePosition },
+                  )}
+                  disabled={loading || Boolean(disableNextButton)}
+                  onClick={form.handleSubmit(handleSubmit)}
+                >
+                  {loading ? (
+                    <ClipLoader
+                      color="#d7e6f4"
+                      size={20}
+                      speedMultiplier={0.7}
+                    />
+                  ) : (
+                    t("memberSearch.next")
+                  )}
+                </Button>
+
+                {showLedger && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          onClick={handleShowLedger}
+                          className="p-2 px-5 w-1/2 text-2xl bg-primary rounded-md text-white cursor-pointer flex items-center justify-center text-center"
+                        >
+                          <IoPrint />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("memberSearch.viewLedger")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-[1000px] h-[min(90dvh,640px)] sm:h-auto sm:max-h-[85vh] p-3 sm:p-6 gap-3 overflow-hidden flex flex-col rounded-lg">
+              <DialogHeader className="shrink-0 pr-8 text-left">
+                <DialogTitle className="text-base sm:text-lg">
+                  {t("memberSearch.searchMembers")}
+                </DialogTitle>
+              </DialogHeader>
+
+              <RadioGroup
+                defaultValue="1"
+                value={selectedRadio}
+                onValueChange={setSelectedRadio}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 shrink-0"
+              >
+                {RadioData.map((item, index) => (
+                  <div className="flex items-center gap-2 min-w-0" key={index}>
+                    <RadioGroupItem
+                      value={item.value}
+                      id={item.value}
+                      disabled={
+                        !!anableRadio && item.value !== String(anableRadio)
+                      }
+                    />
+                    <Label
+                      htmlFor={item.value}
+                      className="text-xs sm:text-sm whitespace-nowrap"
+                    >
+                      {item.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+
+              <div className="w-full min-h-0 flex-1 flex flex-col gap-3 overflow-hidden">
+                <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-x-4 shrink-0">
+                  <FormField
+                    control={form.control}
+                    name="dialougeMemberName"
+                    render={({ field }) => (
+                      <FormItem className="w-full min-w-0">
+                        <FormLabel>
+                          {RadioData.find(
+                            (item) => item.value === selectedRadio,
+                          )?.label || t("memberSearch.memberName")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            autoComplete="off"
+                            placeholder={t("memberSearch.searchByMemberName")}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    className="w-full sm:w-auto px-6 sm:px-10 shrink-0"
+                    onClick={handleSearchMember}
+                  >
+                    {t("memberSearch.search")}
+                  </Button>
+                </div>
+                <div className="w-full min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+                  <MemberSearchTable
+                    loading={getMemberListDataLoading}
+                    data={memberDataByName}
+                    handleSelectData={handleSelectClick}
+                    currentMemberPage={currentMemberPage}
+                    setCurrentMemberPage={setCurrentMemberPage}
+                    lastMemberPage={lastMemberPage}
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </form>
+      </Form>
+    </div>
+  );
+};
+export default MemberSearchForm;

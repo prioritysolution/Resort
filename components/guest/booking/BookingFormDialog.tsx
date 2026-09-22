@@ -10,26 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { PageLoader } from "@/components/shared";
 import InputField from "@/common/formFields/InputField";
 import DropdownField from "@/common/formFields/DropdownField";
 import TextareaField from "@/common/formFields/TextareaField";
 import SwitchField from "@/common/formFields/SwitchField";
+import RadioField from "@/common/formFields/RadioField";
+import DatePicker from "@/common/formFields/DatePicker";
 import {
   BOOKING_ADVANCE_MODES,
   type Booking,
   type BookingFormValues,
 } from "@/container/guest/booking/types";
-import DatePicker from "@/common/formFields/DatePicker";
 
 type Props = {
   open: boolean;
@@ -139,36 +131,12 @@ export default function BookingFormDialog({
                   type="number"
                   placeholder="Enter advance amount"
                 />
-                <FormField
+                <RadioField
                   control={form.control}
                   name="advance_mode"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel className="text-sm font-medium">
-                        Advance mode
-                      </FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          value={String(field.value)}
-                          onValueChange={(value) =>
-                            field.onChange(Number(value))
-                          }
-                          className="flex flex-wrap gap-3 pt-1"
-                        >
-                          {BOOKING_ADVANCE_MODES.map((mode) => (
-                            <Label
-                              key={mode.value}
-                              className="flex cursor-pointer items-center gap-2 rounded-[0.625rem] border border-border bg-background px-3 py-2.5 text-sm font-normal has-[[data-slot=radio-group-item][data-checked]]:border-primary has-[[data-slot=radio-group-item][data-checked]]:bg-primary/5"
-                            >
-                              <RadioGroupItem value={String(mode.value)} />
-                              {mode.label}
-                            </Label>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Advance mode"
+                  options={[...BOOKING_ADVANCE_MODES]}
+                  formItemClassName="sm:col-span-2"
                 />
                 <div className="sm:col-span-2">
                   <SwitchField

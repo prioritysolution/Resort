@@ -45,13 +45,15 @@ function DialogContent({
   showCloseButton = false,
   initialFocus = false,
   finalFocus = false,
+  overlayClassName,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  overlayClassName?: string
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         initialFocus={initialFocus}

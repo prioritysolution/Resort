@@ -30,8 +30,17 @@ export function ReservationView(props: Props) {
             saving={props.saving}
             rooms={props.rooms}
             agents={props.agents}
+            guestForm={props.guestForm}
+            guestDialogOpen={props.guestDialogOpen}
+            editingGuestIndex={props.editingGuestIndex}
+            maxAdditionalGuests={props.maxAdditionalGuests}
             onClose={props.closeDialog}
             onSubmit={props.handleSubmit}
+            onOpenGuestDialog={props.openGuestDialog}
+            onCloseGuestDialog={props.closeGuestDialog}
+            onSaveGuest={props.saveGuest}
+            onRemoveGuest={props.removeGuest}
+            onSelectBooking={props.applySelectedBooking}
           />
           <SuccessMessage
             open={props.successOpen}

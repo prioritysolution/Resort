@@ -346,7 +346,7 @@ const DropdownField = <T extends FieldValues>({
                 : searchPlaceholder || `Select ${label?.toLowerCase() ?? ""}`
             }
             className={cn(
-              "flex h-10 w-full items-center justify-between rounded-md border bg-background py-2.5 pr-10 pl-3.5 text-[15px] font-normal outline-none transition-all duration-150",
+              "flex h-10 w-full cursor-pointer items-center justify-between rounded-md border bg-background py-2.5 pr-10 pl-3.5 text-[15px] font-normal outline-none transition-all duration-150",
               "focus:border-ring focus:ring-4 focus:ring-ring/18",
               hasError
                 ? "border-destructive focus:border-destructive focus:ring-destructive/15"
@@ -359,7 +359,7 @@ const DropdownField = <T extends FieldValues>({
             {loading ? <Spinner /> : null}
             <button
               type="button"
-              className="rounded-md p-1 transition-colors hover:bg-muted focus:outline-none"
+              className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted focus:outline-none disabled:cursor-not-allowed"
               disabled={disabled || loading}
               tabIndex={-1}
               onClick={(e) => {

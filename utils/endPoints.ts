@@ -187,4 +187,14 @@ export const endPoints = {
   checkoutAdd: `${createApi}/checkout/add`,
   checkoutDelete: (id: number | string) =>
     `${createApi}/checkout/delete/${id}`,
+
+  // Reports
+  reportBooking: (query = "") =>
+    `${createApi}/report/booking${query ? `?${query}` : ""}`,
+  reportReservation: (query = "") =>
+    `${createApi}/report/reservation${query ? `?${query}` : ""}`,
+  reportCollection: (query = "") =>
+    `${createApi}/report/collection${query ? `?${query}` : ""}`,
+  reportAgentCommission: (query = "") =>
+    `${createApi}/report/agent-commission${query ? `?${query}` : ""}`,
 } as const;

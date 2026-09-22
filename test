@@ -1,16 +1,17 @@
-# Frontend: Checkout & Payment APIs
+# Frontend: Report APIs
 
 Base URL: `http://116.193.129.229:8092`
 
-All endpoints below need:
+All report APIs are **GET**. Pass filters in the **query string** (Params tab), not in a JSON body.
+
+Headers:
 
 ```
 Accept: application/json
-Content-Type: application/json
 Authorization: Bearer {token}
 ```
 
-Get the token from `POST /api/login`.
+Token from `POST /api/login`:
 
 ```json
 {
@@ -21,218 +22,123 @@ Get the token from `POST /api/login`.
 
 ---
 
-## Status values (do not mix these)
+## Date filters (booking, reservation, collection)
 
-| Field | Table | `1` | `0` |
-|---|---|---|---|
-| `Checkout_Status` | `trans_checkout_details` | Guest is checked out | No active checkout (not done, or cancelled) |
-| `Status` on a payment row | `trans_guest_collection` | Payment is active | Payment is deleted |
-| `Final_Coll` | `trans_guest_collection` | This payment closes the due | Partial payment |
+Use **either** a date range **or** a month:
 
-When opening the **payment** screen, use `Checkout_Status` (not payment `Status`).
+| Param | Example | Notes |
+|---|---|---|
+| `from_date` | `2026-09-01` | Required if `month` is not sent |
+| `to_date` | `2026-09-30` | Required with `from_date`. Must be >= `from_date` |
+| `month` | `2026-09` | `YYYY-MM`. Becomes first day to last day of that month |
 
-- `Checkout_Status = 1` → checkout is done. **Show due amount** and prefill remaining amount with `due_amount`.
-- `Checkout_Status = 0` → not checked out. **Do not show due amount** (`due_amount` is `null`). Guest can still add a collection.
-
----
-
-## Flow
-
-1. Reservation save already inserts collection (`advance_amount + amount`).
-2. Call checkout summary, then checkout add. Checkout **does not** insert another collection. `Amount_Paid` = sum of existing payments.
-3. Checkout is allowed even if due is pending.
-4. Open payment with `reservation_no`. Read `checkout_status` + `due_amount`.
-5. Prefill remaining amount with `due_amount`. Guest may pay more than due.
-6. After payment, checkout `Amount_Paid` is updated. Due is calculated (not stored): `Due = Net_Amount - Amount_Paid` (minimum 0).
+Reservation report can skip dates if `reservation_no` is sent alone.
 
 ---
 
-## Checkout APIs
+## 1. Booking register
 
-### 1. Summary (before checkout)
+`GET /api/report/booking`
 
-`GET /api/checkout/summary?reservation_no=22260001`
+Filter: booking **created date**.
 
-Use this to show the bill preview.
-
-Success `data` includes `Room_Bill`, `Room_Gst`, `Food_Bill`, `Food_Gst`, `Service_Bill`, `Service_Gst`, `Total_Bill`, `Total_Gst`, `Grand_Total`, `Amount_Paid`, `Round_Off`, `Net_Amount`, `Balance_Amount`.
-
-### 2. Add checkout
-
-`POST /api/checkout/add`
-
-```json
-{
-  "reservation_no": "22260001",
-  "checkout_date": "2026-10-06"
-}
+```
+http://116.193.129.229:8092/api/report/booking?from_date=2026-09-01&to_date=2026-09-30
+http://116.193.129.229:8092/api/report/booking?month=2026-09
 ```
 
-| Field | Required | Notes |
-|---|---|---|
-| `reservation_no` | yes | |
-| `checkout_date` | no | Must be after check-in. Defaults to today |
-| `amount` | no | unused for collection |
-| `mode` | no | unused for collection |
+Response extras: `total_records`, `total_advance`.
 
-On success, `Status` in checkout `data` is `1`.
-
-Errors:
-
-- Reservation not found
-- Checkout already exists for this reservation
-- Checkout date must be after check-in date
-
-### 3. List
-
-`GET /api/checkout/list`  
-`GET /api/checkout/list?reservation_no=22260001`
-
-Only active checkouts (`Status = 1`).
-
-### 4. Details
-
-`GET /api/checkout/details/{checkoutId}`
-
-### 5. Cancel checkout (soft delete)
-
-`DELETE /api/checkout/delete/{checkoutId}`
-
-Sets checkout `Status = 0`. That reservation can be checked out again.
+Row fields include `Register_Date`, `Booking_No`, `Guest_Name`, `Contact_No`, `Room_TName`, `NoOf_Room`, `CheckIn_Date`, `ExpChkOut_Dt`, `Agent_Name`, `Adv_Amount`.
 
 ---
 
-## Payment APIs
+## 2. Reservation register
 
-### 1. Due amount (open payment screen with this)
+`GET /api/report/reservation`
 
-`GET /api/payment/due?reservation_no=22260001`
+| Param | Required | Notes |
+|---|---|---|
+| `from_date` / `to_date` or `month` | yes, unless only `reservation_no` | Created date range |
+| `reservation_no` | no | One reservation. Can be sent alone |
+
+```
+http://116.193.129.229:8092/api/report/reservation?from_date=2026-09-01&to_date=2026-09-30
+http://116.193.129.229:8092/api/report/reservation?reservation_no=22260001
+http://116.193.129.229:8092/api/report/reservation?from_date=2026-09-01&to_date=2026-09-30&reservation_no=22260001
+```
+
+Response extras: `total_records`, `total_amount_paid`.
+
+Row fields include `Reservation_No`, `Booking_No`, `Guest_Name`, `CheckIn_Date`, `Room_Nos`, `Agent_Name`, `Amount_Paid`, `Checkout_Status` (`1` = checked out, `0` = not).
+
+---
+
+## 3. Collection register
+
+`GET /api/report/collection`
+
+Frontend dropdown **collection type**:
+
+| Value | UI | Params |
+|---|---|---|
+| `summary` | Date / month filter, all collections | `collection_type=summary` + dates or `month` |
+| `reservation` | Reservation no + dates | `collection_type=reservation` + `reservation_no` + dates or `month` |
+
+```
+http://116.193.129.229:8092/api/report/collection?collection_type=summary&from_date=2026-09-01&to_date=2026-09-30
+http://116.193.129.229:8092/api/report/collection?collection_type=summary&month=2026-09
+http://116.193.129.229:8092/api/report/collection?collection_type=reservation&reservation_no=22260001&from_date=2026-09-01&to_date=2026-09-30
+```
+
+Filter date is `Coll_Date`.
+
+Response extras: `collection_type`, `reservation_no`, `total_records`, `total_collection`.
+
+Row fields include `Register_Date`, `Collection_Id`, `Reservation_No`, `Guest_Name`, `Coll_Amount`, `Coll_Mode`, `Final_Coll`, `Agent_Name`.
+
+---
+
+## 4. Agent commission (month wise)
+
+`GET /api/report/agent-commission`
+
+Frontend dropdown **commission type**:
+
+| Value | UI | Params | Result |
+|---|---|---|---|
+| `all` | All agents | `commission_type=all` + `month` | One total row per agent |
+| `agent` | One agent | `commission_type=agent` + `month` + `agent_id` | One row per reservation/checkout |
+
+`month` is required (`YYYY-MM`). Commission is checkout `Agent_Comm_Amount` = `Room_Bill × agent Comm_Prcnt`.
+
+```
+http://116.193.129.229:8092/api/report/agent-commission?commission_type=all&month=2026-10
+http://116.193.129.229:8092/api/report/agent-commission?commission_type=agent&month=2026-10&agent_id=9
+```
+
+Response extras: `commission_type`, `month`, `agent_id`, `total_records`, `total_room_bill`, `total_commission`.
+
+**All** row: `Comm_Month`, `Agent_Id`, `Agent_Name`, `Checkout_Count`, `Room_Bill`, `Agent_Comm_Amount`.
+
+**Agent** row: `Comm_Month`, `CheckOut_Date`, `Checkout_Id`, `Bill_No`, `Reservation_No`, `Guest_Name`, `Agent_Name`, `Room_Bill`, `Agent_Comm_Amount`.
+
+---
+
+## Auth / errors
+
+Missing token → `401`.
+
+Validation example:
 
 ```json
 {
-  "Error_Code": 0,
-  "Message": "Due amount fetched successfully.",
-  "due_amount": 35860,
-  "checkout_status": 1,
-  "data": {
-    "Reservation_Id": 1,
-    "Reservation_No": "22260001",
-    "Guest_Name": "avinash",
-    "Net_Amount": 36960,
-    "Amount_Paid": 1100,
-    "Due_Amount": 35860,
-    "Checkout_Id": 7,
-    "Checkout_Status": 1
+  "message": "The from date field is required. (and 1 more error)",
+  "errors": {
+    "from_date": ["The from date field is required."],
+    "to_date": ["The to date field is required."]
   }
 }
 ```
 
-Use `data.Due_Amount` as the remaining amount field. Use `data.Checkout_Status` to know if checkout is done.
-
-### 2. List
-
-`GET /api/payment/list`  
-`GET /api/payment/list?reservation_no=22260001`
-
-```json
-{
-  "Error_Code": 0,
-  "Message": "Payments fetched successfully.",
-  "due_amount": 35860,
-  "amount_paid": 1100,
-  "net_amount": 36960,
-  "checkout_status": 1,
-  "data": [
-    {
-      "Collection_Id": 11,
-      "Coll_Date": "2026-09-22",
-      "Reservation_No": "22260001",
-      "Coll_Amount": 1100,
-      "Coll_Mode": 1,
-      "Final_Coll": 0,
-      "Status": 1,
-      "Due_Amount": 35860,
-      "Checkout_Id": 7,
-      "Checkout_Status": 1
-    }
-  ]
-}
-```
-
-`data[].Status` is the **payment** row (1 = active). `checkout_status` / `Checkout_Status` is the **checkout**.
-
-### 3. Add payment
-
-`POST /api/payment/add`
-
-```json
-{
-  "reservation_no": "22260001",
-  "coll_date": "2026-10-06",
-  "remaining_amount": 35860,
-  "coll_amount": 35860,
-  "coll_mode": 1,
-  "final_coll": false
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `reservation_no` | yes | |
-| `coll_date` | no | Defaults to today |
-| `remaining_amount` | yes* | Amount being paid now. Can exceed due |
-| `coll_amount` | no | Same as `remaining_amount` (alias). Send either |
-| `coll_mode` | yes | Payment mode id (`1` = as used in existing screens) |
-| `final_coll` | no | `false` = not final. If omitted, API sets `1` when paid amount >= due |
-
-Do **not** send checkout status in the add body. Read it from due/list.
-
-### 4. Details
-
-`GET /api/payment/details/{collectionId}`
-
-Includes `Checkout_Status` on the payment row.
-
-### 5. Update
-
-`PUT /api/payment/update/{collectionId}`
-
-```json
-{
-  "reservation_no": "22260001",
-  "coll_date": "2026-10-06",
-  "coll_amount": 2000,
-  "coll_mode": 1,
-  "final_coll": false
-}
-```
-
-### 6. Delete (soft)
-
-`DELETE /api/payment/delete/{collectionId}`
-
-Sets payment `Status = 0` and recalculates checkout `Amount_Paid`.
-
----
-
-## Frontend remaining-amount field
-
-1. Call `GET /api/payment/due?reservation_no={no}`.
-2. If `checkout_status === 1`, **show due** and set remaining amount = `due_amount`.
-3. If `checkout_status === 0`, **hide due**. Remaining amount is a normal collection (not against a bill).
-4. Submit add payment with `remaining_amount`.
-5. Refresh due/list. `Amount_Paid` on checkout is updated automatically.
-
----
-
-## Error shape
-
-```json
-{
-  "Error_Code": 1,
-  "Message": "Reservation not found.",
-  "data": null
-}
-```
-
-`Error_Code = 0` is success.
+Success: `Error_Code` is `0`.

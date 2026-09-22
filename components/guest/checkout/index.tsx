@@ -1,12 +1,12 @@
 "use client";
 
 import { ListPageFrame } from "@/components/shared";
-import SuccessMessage from "@/common/dialog/SuccessMessage";
 import type { useCheckout } from "@/container/guest/checkout/Hooks";
 import CheckoutToolbar from "./CheckoutToolbar";
 import CheckoutTable from "./CheckoutTable";
 import CheckoutFormDialog from "./CheckoutFormDialog";
 import CheckoutCancelDialog from "./CheckoutCancelDialog";
+import CheckoutBillDialog from "./CheckoutBillDialog";
 
 type Props = ReturnType<typeof useCheckout>;
 
@@ -43,10 +43,10 @@ export function CheckoutView(props: Props) {
             onCancel={() => props.setDeleteTarget(null)}
             onConfirm={props.confirmDelete}
           />
-          <SuccessMessage
-            open={props.successOpen}
-            onClose={() => props.setSuccessOpen(false)}
-            message={props.successMessage}
+          <CheckoutBillDialog
+            open={props.billOpen}
+            bill={props.bill}
+            onClose={props.closeBill}
           />
         </>
       }

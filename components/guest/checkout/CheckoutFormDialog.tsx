@@ -45,7 +45,7 @@ export default function CheckoutFormDialog({
     <Dialog open={open} disablePointerDismissal>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
       >
         <DialogHeader className="shrink-0 px-4 pt-4">
           <DialogTitle>Checkout guest</DialogTitle>

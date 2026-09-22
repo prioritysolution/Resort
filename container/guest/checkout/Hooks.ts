@@ -18,6 +18,7 @@ import {
   getCheckoutListAPI,
   getCheckoutSummaryAPI,
 } from "./CheckoutApis";
+import { parseCheckoutBill } from "./checkoutBill";
 import {
   checkoutDateOf,
   type Checkout,
@@ -58,6 +59,9 @@ export function useCheckout() {
 
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [bill, setBill] = useState<Checkout | null>(null);
+  const [billOpen, setBillOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const crud = useGuestCrud<Checkout, CheckoutFormValues, CheckoutPayload>({
     form,
@@ -114,12 +118,64 @@ export function useCheckout() {
     crud.closeDialog();
   };
 
+  const closeBill = () => {
+    setBillOpen(false);
+    setBill(null);
+  };
+
+  const handleSubmit = async (values: CheckoutFormValues) => {
+    setSaving(true);
+    try {
+      const date = toApiDate(values.checkout_date);
+      const response = await addCheckoutAPI({
+        reservation_no: values.reservation_no.trim(),
+        ...(date ? { checkout_date: date } : {}),
+      });
+
+      if (!isApiSuccess(response)) {
+        toast.error(apiMessage(response, "Checkout failed"));
+        return;
+      }
+
+      const guestFallback =
+        summary?.Guest_Name != null ? String(summary.Guest_Name) : undefined;
+      const parsed =
+        parseCheckoutBill(response.data, guestFallback) ||
+        parseCheckoutBill(response, guestFallback) ||
+        ({
+          Reservation_No: values.reservation_no.trim(),
+          CheckOut_Date: date || undefined,
+          Guest_Name: guestFallback,
+        } satisfies Checkout);
+
+      setSummary(null);
+      crud.closeDialog();
+
+      // Open bill immediately — don't wait on list reload
+      setBill(parsed);
+      setBillOpen(true);
+
+      void crud.reload().catch(() => {
+        /* list refresh is best-effort after bill is shown */
+      });
+    } catch {
+      toast.error("Checkout failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     ...crud,
+    saving: saving || crud.saving,
     openCreate,
     closeDialog,
+    handleSubmit,
     summary,
     summaryLoading,
     previewSummary,
+    bill,
+    billOpen,
+    closeBill,
   };
 }

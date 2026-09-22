@@ -17,7 +17,10 @@ export const getCheckoutDetailsAPI = (value: string | number) =>
     url: endPoints.checkoutDetails(value),
   });
 export const addCheckoutAPI = (body: CheckoutPayload) =>
-  doPostApiCall<ApiCudResponse>({ url: endPoints.checkoutAdd, bodyData: body });
+  doPostApiCall<GuestDataResponse<Checkout>>({
+    url: endPoints.checkoutAdd,
+    bodyData: body,
+  });
 
 export const deleteCheckoutAPI = (id: number | string) =>
   doDeleteApiCall<ApiCudResponse>({ url: endPoints.checkoutDelete(id) });

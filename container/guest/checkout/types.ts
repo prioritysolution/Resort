@@ -19,6 +19,7 @@ export type Checkout = {
   Total_Gst?: number | string | null;
   Grand_Total?: number | string | null;
   Amount_Paid?: number | string | null;
+  Agent_Comm_Amount?: number | string | null;
   Round_Off?: number | string | null;
   Net_Amount?: number | string | null;
   Balance_Amount?: number | string | null;
@@ -65,6 +66,7 @@ export type CheckoutSummary = {
   Total_Gst?: number | string | null;
   Grand_Total?: number | string | null;
   Amount_Paid?: number | string | null;
+  Agent_Comm_Amount?: number | string | null;
   Round_Off?: number | string | null;
   Net_Amount?: number | string | null;
   Balance_Amount?: number | string | null;
@@ -95,6 +97,7 @@ export const CHECKOUT_SUMMARY_FIELDS: Array<{
   { key: "Total_Gst", label: "Total GST" },
   { key: "Grand_Total", label: "Grand total" },
   { key: "Amount_Paid", label: "Amount paid" },
+  { key: "Agent_Comm_Amount", label: "Agent commission" },
   { key: "Round_Off", label: "Round off" },
   { key: "Net_Amount", label: "Net amount" },
   { key: "Balance_Amount", label: "Balance" },

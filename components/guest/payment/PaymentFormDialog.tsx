@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { PageLoader } from "@/components/shared";
 import InputField from "@/common/formFields/InputField";
+import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
 import DatePicker from "@/common/formFields/DatePicker";
 import RadioField from "@/common/formFields/RadioField";
 import CheckboxField from "@/common/formFields/CheckboxField";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import {
   formatMoney,
   PAYMENT_COLL_MODES,
@@ -65,6 +67,7 @@ export default function PaymentFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
@@ -72,12 +75,12 @@ export default function PaymentFormDialog({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:items-end">
                   <div className="min-w-0 flex-1">
-                    <InputField
+                    <ReservationSearchField
                       control={form.control}
                       name="reservation_no"
                       label="Reservation number"
                       isRequired
-                      placeholder="Enter reservation number"
+                      placeholder="Enter or search reservation number"
                       disabled={Boolean(editing)}
                     />
                   </div>
@@ -118,6 +121,7 @@ export default function PaymentFormDialog({
                               .join(" · ")}
                           </p>
                         </div>
+                        {/* Checkout complete — due available */}
                         {checkoutDone ? (
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             <div>

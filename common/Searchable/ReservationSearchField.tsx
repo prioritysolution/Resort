@@ -23,12 +23,13 @@ import {
 } from "@/components/ui/table";
 import { PageLoader } from "@/components/shared";
 import InputField from "@/common/formFields/InputField";
-import { getBookingListAPI } from "@/container/guest/booking/BookingApis";
-import type { Booking } from "@/container/guest/booking/types";
+import { getReservationListAPI } from "@/container/guest/reservation/ReservationApis";
+import type { Reservation } from "@/container/guest/reservation/types";
 import {
   extractListRows,
   isApiSuccess,
 } from "@/container/guest/shared/types";
+import { cn } from "@/lib/utils";
 
 type SearchFormValues = {
   keyword: string;
@@ -42,15 +43,14 @@ type Props<T extends FieldValues> = {
   disabled?: boolean;
   isRequired?: boolean;
   formItemClassName?: string;
-  /** Called when a booking is picked from the search panel */
-  onSelect?: (booking: Booking) => void;
+  onSelect?: (reservation: Reservation) => void;
 };
 
-export default function BookingSearchField<T extends FieldValues>({
+export default function ReservationSearchField<T extends FieldValues>({
   control,
   name,
-  label = "Booking number",
-  placeholder = "Enter or search booking number",
+  label = "Reservation number",
+  placeholder = "Enter or search reservation number",
   disabled = false,
   isRequired = false,
   formItemClassName,
@@ -66,7 +66,7 @@ export default function BookingSearchField<T extends FieldValues>({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState<Booking[]>([]);
+  const [rows, setRows] = useState<Reservation[]>([]);
   const [searched, setSearched] = useState(false);
 
   const filteredRows = useMemo(() => {
@@ -74,10 +74,11 @@ export default function BookingSearchField<T extends FieldValues>({
     if (!q) return rows;
     return rows.filter((row) => {
       const haystack = [
-        row.Booking_No,
+        row.Reservation_No,
         row.Guest_Name,
         row.Contact_No,
-        row.Room_TName,
+        row.Room_No,
+        row.Booking_No,
       ]
         .filter(Boolean)
         .join(" ")
@@ -86,14 +87,14 @@ export default function BookingSearchField<T extends FieldValues>({
     });
   }, [keyword, rows]);
 
-  const loadBookings = useCallback(async () => {
+  const loadReservations = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getBookingListAPI();
+      const response = await getReservationListAPI();
       if (isApiSuccess(response)) {
-        const data = extractListRows<Booking>(
+        const data = extractListRows<Reservation>(
           response as unknown as Record<string, unknown>,
-        ).filter((row) => Number(row.Status) === 1);
+        ).filter((row) => row.Status == null || Number(row.Status) === 1);
         setRows(data);
       } else {
         setRows([]);
@@ -135,14 +136,14 @@ export default function BookingSearchField<T extends FieldValues>({
     setOpen(true);
   };
 
-  const handlePick = (booking: Booking) => {
-    const bookingNo = booking.Booking_No || "";
-    setValue(name, bookingNo as never, {
+  const handlePick = (reservation: Reservation) => {
+    const reservationNo = reservation.Reservation_No || "";
+    setValue(name, reservationNo as never, {
       shouldDirty: true,
       shouldValidate: false,
     });
     clearErrors();
-    onSelect?.(booking);
+    onSelect?.(reservation);
     setOpen(false);
   };
 
@@ -153,11 +154,11 @@ export default function BookingSearchField<T extends FieldValues>({
             className="fixed inset-0 z-200 flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="booking-search-title"
+            aria-labelledby="reservation-search-title"
           >
             <button
               type="button"
-              aria-label="Close booking search"
+              aria-label="Close reservation search"
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setOpen(false)}
             />
@@ -165,13 +166,13 @@ export default function BookingSearchField<T extends FieldValues>({
             <div className="relative z-10 flex max-h-[min(90vh,640px)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10">
               <div className="shrink-0 space-y-1 border-b border-border px-4 py-4">
                 <h2
-                  id="booking-search-title"
+                  id="reservation-search-title"
                   className="font-heading text-base font-medium"
                 >
-                  Search bookings
+                  Search reservations
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Find an active booking and select it to fill the reservation.
+                  Find an active reservation and select it to fill the number.
                 </p>
               </div>
 
@@ -182,17 +183,15 @@ export default function BookingSearchField<T extends FieldValues>({
                     onSubmit={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      void loadBookings();
+                      void loadReservations();
                     }}
                   >
-                    {/* Search input */}
                     <div className="min-w-0 flex-1">
                       <InputField
                         control={searchForm.control}
                         name="keyword"
                         label="Search"
-                        placeholder="Booking no, guest name, or contact"
-                        
+                        placeholder="Reservation no, guest name, or contact"
                         startContent={<Search className="size-4" />}
                       />
                     </div>
@@ -218,18 +217,18 @@ export default function BookingSearchField<T extends FieldValues>({
                   ) : filteredRows.length === 0 ? (
                     <p className="px-4 py-12 text-center text-sm text-muted-foreground">
                       {searched
-                        ? "No bookings found."
-                        : 'Click "Search" to load bookings.'}
+                        ? "No reservations found."
+                        : 'Click "Search" to load reservations.'}
                     </p>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Booking no.</TableHead>
+                          <TableHead>Reservation no.</TableHead>
                           <TableHead>Guest</TableHead>
                           <TableHead>Contact</TableHead>
                           <TableHead className="hidden md:table-cell">
-                            Room type
+                            Room
                           </TableHead>
                           <TableHead>Check-in</TableHead>
                           <TableHead className="w-22.5 text-right">
@@ -241,22 +240,25 @@ export default function BookingSearchField<T extends FieldValues>({
                         {filteredRows.map((row) => {
                           const selected =
                             String(getValues(name) || "") ===
-                            String(row.Booking_No || "");
+                            String(row.Reservation_No || "");
                           return (
                             <TableRow
-                              key={row.Booking_Id || row.Booking_No}
+                              key={row.Reservation_Id || row.Reservation_No}
                               data-state={selected ? "selected" : undefined}
                             >
                               <TableCell className="font-medium">
-                                {row.Booking_No}
+                                {row.Reservation_No}
                               </TableCell>
                               <TableCell>{row.Guest_Name}</TableCell>
                               <TableCell>{row.Contact_No}</TableCell>
                               <TableCell className="hidden md:table-cell">
-                                {row.Room_TName || "—"}
+                                {row.Room_No || "—"}
                               </TableCell>
                               <TableCell>
-                                {row.CheckIn_Date || row.Checkin_Date || "—"}
+                                {row.CheckIn_Date ||
+                                  row.Checkin_Date ||
+                                  row.checkin_date ||
+                                  "—"}
                               </TableCell>
                               <TableCell className="text-right">
                                 <Button
@@ -294,7 +296,6 @@ export default function BookingSearchField<T extends FieldValues>({
 
   return (
     <>
-    {/* Booking number input */}
       <InputField
         control={control}
         name={name}
@@ -310,15 +311,18 @@ export default function BookingSearchField<T extends FieldValues>({
             variant="ghost"
             size="icon-sm"
             disabled={disabled}
-            className="-mr-1 shrink-0 text-muted-foreground hover:text-primary"
+            className={cn(
+              "-mr-1 shrink-0 text-muted-foreground hover:text-primary",
+              disabled &&
+                "pointer-events-auto cursor-not-allowed disabled:pointer-events-auto disabled:cursor-not-allowed",
+            )}
             onClick={handleOpenSearch}
-            aria-label="Search bookings"
+            aria-label="Search reservations"
           >
             <Search className="size-4" />
           </Button>
         }
       />
-
       {searchPanel}
     </>
   );

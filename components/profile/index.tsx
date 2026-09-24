@@ -5,6 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import InputField from "@/common/formFields/InputField";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import SuccessMessage from "@/common/dialog/SuccessMessage";
 import {
   PageHeader,
@@ -40,6 +41,7 @@ const ProfileView = ({
       <PageShellContent>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(handleSubmit)}
             className="flex w-full flex-col gap-4"
             autoComplete="off"

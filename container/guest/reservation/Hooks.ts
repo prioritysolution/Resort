@@ -89,13 +89,19 @@ const mapRoomOptions = (data: RoomDetail[]) =>
 const mapGuest = (
   g: NonNullable<Reservation["Guests"]>[number],
 ): ReservationGuestFormValues => ({
-  guest_name: g.guest_name || g.Guest_Name || "",
+  guest_name: g.guest_name || g.Guest_Name || g.Guest_Nm || "",
   contact_no: g.contact_no || g.Contact_No || "",
   age: g.age ?? g.Age ?? "",
   gender: g.gender || g.Gender || "M",
   aadhar_no: g.aadhar_no || g.Aadhar_No || "",
   address: g.address || g.Address || "",
 });
+
+const primaryFlag = (value: unknown) => {
+  if (value === true || Number(value) === 1) return true;
+  if (value === false || Number(value) === 0) return false;
+  return true;
+};
 
 const emptyValues: ReservationFormValues = {
   booking_no: "",
@@ -134,23 +140,31 @@ const aadharNoSchema = yup
   );
 
 const guestSchema = yup.object({
-  guest_name: yup.string().required("Guest name is required"),
-  contact_no: yup.string().required("Contact is required").max(25),
+  guest_name: yup.string().trim().required("Guest name is required"),
+  contact_no: yup
+    .string()
+    .trim()
+    .required("Contact is required")
+    .max(25, "Contact must be at most 25 characters"),
   age: yup
     .mixed<number | string>()
     .test("age", "Enter a valid age", (value) => {
       const n = Number(value);
       return Number.isFinite(n) && n > 0 && n < 130;
     }),
-  gender: yup.string().oneOf(["M", "F"]).required(),
+  gender: yup.string().oneOf(["M", "F"]).required("Gender is required"),
   aadhar_no: aadharNoSchema,
   address: yup.string().default(""),
 });
 
 const schema = yup.object({
   booking_no: yup.string().default(""),
-  guest_name: yup.string().required(),
-  contact_no: yup.string().required().max(25),
+  guest_name: yup.string().trim().required("Guest name is required"),
+  contact_no: yup
+    .string()
+    .trim()
+    .required("Contact number is required")
+    .max(25, "Contact number must be at most 25 characters"),
   aadhar_no: aadharNoSchema,
   address_1: yup.string().default(""),
   address_2: yup.string().default(""),
@@ -164,7 +178,7 @@ const schema = yup.object({
     .default(""),
   gender: yup.string().oneOf(["M", "F"]).default("M"),
   is_primary: yup.boolean().default(true),
-  checkin_date: yup.mixed<string | Date>().required("Checkin date is required"),
+  checkin_date: yup.mixed<string | Date>().required("Check-in date is required"),
   checkout_date: yup
     .mixed<string | Date>()
     .required("Checkout date is required")
@@ -173,7 +187,11 @@ const schema = yup.object({
       const checkout = toApiDate(value);
       return !checkin || !checkout || checkout > checkin;
     }),
-  adult_no: yup.number().min(1).required(),
+  adult_no: yup
+    .number()
+    .typeError("Adults is required")
+    .min(1, "At least 1 adult is required")
+    .required("Adults is required"),
   child_no: yup.number().min(0).default(0),
   rooms: yup
     .array()
@@ -184,7 +202,7 @@ const schema = yup.object({
       }),
     )
     .min(1, "Select at least one room")
-    .required(),
+    .required("Select at least one room"),
   advance_amount: yup
     .mixed<number | string>()
     .default("")
@@ -201,7 +219,10 @@ const schema = yup.object({
       const n = Number(value);
       return !Number.isNaN(n) && n >= 0;
     }),
-  mode: yup.number().oneOf([1, 2, 3]).required(),
+  mode: yup
+    .number()
+    .oneOf([1, 2, 3], "Select payment mode")
+    .required("Payment mode is required"),
   agent_id: yup.mixed().default(""),
   special_request: yup.string().default(""),
   guests: yup.array().of(guestSchema).default([]),
@@ -212,7 +233,7 @@ export function useReservation() {
     resolver: yupResolver(schema) as unknown as Resolver<ReservationFormValues>,
     defaultValues: emptyValues,
     mode: "onSubmit",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const guestForm = useForm<ReservationGuestFormValues>({
@@ -220,6 +241,8 @@ export function useReservation() {
       guestSchema,
     ) as unknown as Resolver<ReservationGuestFormValues>,
     defaultValues: emptyGuestValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const [rooms, setRooms] = useState<Array<{ Id: number; Name: string }>>([]);
@@ -470,7 +493,33 @@ export function useReservation() {
     form,
     emptyValues,
     getList: getReservationListAPI,
-    getDetails: (row) => getReservationDetailsAPI(row.Reservation_No || ""),
+    getDetails: async (row) => {
+      const response = await getReservationDetailsAPI(
+        row.Reservation_No || "",
+      );
+      if (
+        response?.data &&
+        typeof response.data === "object" &&
+        !Array.isArray(response.data)
+      ) {
+        const data = response.data as Record<string, unknown>;
+        if (
+          !data.rooms &&
+          !data.Rooms &&
+          Array.isArray(response.rooms)
+        ) {
+          data.rooms = response.rooms;
+        }
+        if (
+          !data.guests &&
+          !data.Guests &&
+          Array.isArray(response.guests)
+        ) {
+          data.guests = response.guests;
+        }
+      }
+      return response;
+    },
     detailKeys: ["reservation", "Reservation"],
     add: addReservationAPI,
     update: updateReservationAPI,
@@ -491,29 +540,31 @@ export function useReservation() {
                   : row,
             );
 
+      const mode = Number(
+        r.Mode ?? r.mode ?? r.payment_mode ?? r.Advance_Mode ?? r.advance_mode,
+      );
+
       return {
-        booking_no: r.Booking_No || (r.Booking_Id ? String(r.Booking_Id) : ""),
+        booking_no: r.Booking_No || "",
         guest_name: r.Guest_Name || "",
         contact_no: r.Contact_No || "",
         aadhar_no: r.Aadhar_No || "",
         address_1: r.Address_1 || "",
         address_2: r.Address_2 || "",
-        age: r.Age ?? "",
-        gender: r.Gender || "M",
-        is_primary: Boolean(
-          r.Is_Primary === true ||
-            Number(r.Is_Primary) === 1 ||
-            r.Is_Primary == null,
-        ),
-        checkin_date: r.CheckIn_Date || r.Checkin_Date || "",
-        checkout_date: r.Checkout_Date || "",
+        age: r.age ?? r.Age ?? "",
+        gender: r.gender || r.Gender || "M",
+        is_primary: primaryFlag(r.is_primary ?? r.Is_Primary),
+        checkin_date:
+          r.CheckIn_Date || r.Checkin_Date || r.checkin_date || "",
+        checkout_date:
+          r.CheckOut_Date || r.Checkout_Date || r.checkout_date || "",
         adult_no: r.Adult_No || 1,
         child_no: r.Child_No || 0,
         rooms,
         advance_amount:
           r.Adv_Amount ?? r.advance_amount ?? r.Advance_Amount ?? "",
         amount: r.Amount ?? r.amount ?? "",
-        mode: Number(r.Mode ?? r.mode) || 1,
+        mode: mode === 1 || mode === 2 || mode === 3 ? mode : 1,
         agent_id: r.Agent_Id || "",
         special_request: r.Special_Request || "",
         guests: (r.Guests || r.guests || []).map(mapGuest),
@@ -580,8 +631,20 @@ export function useReservation() {
     }
   }, [crud.dialogOpen, guestForm]);
 
+  const openEdit = useCallback(
+    async (row: Reservation) => {
+      await crud.openEdit(row);
+      // Prevent booking-no debounce from re-fetching and clearing rooms/guests.
+      lastResolvedBookingNo.current = String(
+        form.getValues("booking_no") || "",
+      ).trim();
+    },
+    [crud, form],
+  );
+
   return {
     ...crud,
+    openEdit,
     rooms,
     agents,
     guestForm,

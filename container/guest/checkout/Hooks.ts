@@ -54,7 +54,7 @@ export function useCheckout() {
     resolver: yupResolver(schema) as unknown as Resolver<CheckoutFormValues>,
     defaultValues: emptyValues,
     mode: "onSubmit",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);

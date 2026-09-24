@@ -3,6 +3,7 @@
 import {
   useState,
   useEffect,
+  useRef,
   type ReactNode,
   type ChangeEvent,
   type FormEvent,
@@ -20,6 +21,7 @@ import {
   type ControllerFieldState,
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 import { Eye, EyeOff } from "lucide-react";
 import {
   FormControl,
@@ -191,6 +193,21 @@ function InputFieldInner<T extends FieldValues>({
 }: InnerProps<T>) {
   const [localValue, setLocalValue] = useState(String(field.value ?? ""));
   const hasError = !!fieldState?.error;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input || type !== "number") return;
+
+    const stopWheel = (event: WheelEvent) => {
+      if (document.activeElement !== input) return;
+      event.preventDefault();
+      input.blur();
+    };
+
+    input.addEventListener("wheel", stopWheel, { passive: false });
+    return () => input.removeEventListener("wheel", stopWheel);
+  }, [type]);
 
   useEffect(() => {
     if (isBlurUpdate) {
@@ -216,7 +233,7 @@ function InputFieldInner<T extends FieldValues>({
             hasError
               ? "border-destructive focus-within:ring-destructive/30"
               : "border-input",
-            disabled && "cursor-not-allowed bg-muted/80",
+            disabled && disabledFieldClass,
             startContent || endContent || isPassword ? "gap-2" : "",
             className,
           )}
@@ -228,6 +245,7 @@ function InputFieldInner<T extends FieldValues>({
           ) : null}
 
           <Input
+            ref={inputRef}
             value={
               displayValue !== undefined
                 ? displayValue
@@ -254,7 +272,7 @@ function InputFieldInner<T extends FieldValues>({
               !startContent && "pl-3",
               !endContent && !isPassword && "pr-3",
               "text-sm text-foreground placeholder:text-muted-foreground",
-              "disabled:cursor-not-allowed disabled:opacity-100",
+              disabled && disabledFieldClass,
               type === "number" &&
                 "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
             )}

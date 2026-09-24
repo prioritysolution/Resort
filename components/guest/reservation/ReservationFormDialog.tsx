@@ -26,7 +26,7 @@ import TextareaField from "@/common/formFields/TextareaField";
 import DatePicker from "@/common/formFields/DatePicker";
 import CheckboxField from "@/common/formFields/CheckboxField";
 import RadioField from "@/common/formFields/RadioField";
-import BookingSearchField from "@/common/formFields/BookingSearchField";
+import BookingSearchField from "@/common/Searchable/BookingSearchField";
 import {
   RESERVATION_GENDER_OPTIONS,
   RESERVATION_PAYMENT_MODES,
@@ -37,6 +37,7 @@ import {
 import type { Booking } from "@/container/guest/booking/types";
 import ReservationGuestDialog from "./ReservationGuestDialog";
 import ReservationRoomsField from "./ReservationRoomsField";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 
 type Props = {
   open: boolean;
@@ -98,6 +99,7 @@ export default function ReservationFormDialog({
           </DialogHeader>
           <Form {...form}>
             <form
+              onKeyDown={preventEnterSubmit}
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex min-h-0 flex-1 flex-col"
             >
@@ -220,6 +222,7 @@ export default function ReservationFormDialog({
                     label="Advance amount"
                     type="number"
                     placeholder="Enter advance amount"
+                    disabled={true}
                   />
                   <InputField
                     control={form.control}

@@ -15,6 +15,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 
 export type RadioOption = {
   value: string | number;
@@ -75,9 +76,10 @@ export default function RadioField<T extends FieldValues>({
                 <Label
                   key={String(option.value)}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-[0.625rem] border border-border bg-background px-3 py-2.5 text-sm font-normal has-[[data-slot=radio-group-item][data-checked]]:border-primary has-[[data-slot=radio-group-item][data-checked]]:bg-primary/5",
-                    (disabled || option.disabled) &&
-                      "cursor-not-allowed opacity-50",
+                    "flex items-center gap-2 rounded-[0.625rem] border border-border bg-background px-3 py-2.5 text-sm font-normal has-[[data-slot=radio-group-item][data-checked]]:border-primary has-[[data-slot=radio-group-item][data-checked]]:bg-primary/5",
+                    disabled || option.disabled
+                      ? disabledFieldClass
+                      : "cursor-pointer",
                   )}
                 >
                   <RadioGroupItem

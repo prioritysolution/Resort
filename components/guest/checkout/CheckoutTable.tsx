@@ -41,7 +41,6 @@ const columns: GuestColumn<Checkout>[] = [
 type Props = {
   rows: Checkout[];
   loading: boolean;
-  onDelete: (row: Checkout) => void;
 };
 
 export default function CheckoutTable(props: Props) {
@@ -52,8 +51,6 @@ export default function CheckoutTable(props: Props) {
       columns={columns}
       rowKey={(r, i) => r.Checkout_Id || r.Bill_Id || i}
       emptyTitle="No checkouts found"
-      onDelete={props.onDelete}
-      deleteLabel="Cancel"
     />
   );
 }

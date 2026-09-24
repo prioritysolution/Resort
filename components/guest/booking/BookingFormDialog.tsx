@@ -17,6 +17,7 @@ import TextareaField from "@/common/formFields/TextareaField";
 import SwitchField from "@/common/formFields/SwitchField";
 import RadioField from "@/common/formFields/RadioField";
 import DatePicker from "@/common/formFields/DatePicker";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import {
   BOOKING_ADVANCE_MODES,
   type Booking,
@@ -58,6 +59,7 @@ export default function BookingFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >

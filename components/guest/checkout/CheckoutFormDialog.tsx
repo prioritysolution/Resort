@@ -12,8 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PageLoader } from "@/components/shared";
-import InputField from "@/common/formFields/InputField";
+import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
 import DatePicker from "@/common/formFields/DatePicker";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import {
   CHECKOUT_SUMMARY_FIELDS,
   type CheckoutFormValues,
@@ -56,17 +57,18 @@ export default function CheckoutFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <InputField
+                <ReservationSearchField
                   control={form.control}
                   name="reservation_no"
                   label="Reservation number"
                   isRequired
-                  placeholder="Enter reservation number"
+                  placeholder="Enter or search reservation number"
                 />
                 <DatePicker
                   control={form.control}

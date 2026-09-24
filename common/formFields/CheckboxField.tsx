@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 
 type Props<T extends FieldValues> = {
   control: Control<T>;
@@ -40,6 +41,7 @@ export default function CheckboxField<T extends FieldValues>({
         <FormItem
           className={cn(
             "flex flex-row items-start gap-3 rounded-[0.625rem] border border-border bg-background p-4",
+            disabled && disabledFieldClass,
             className,
           )}
         >
@@ -52,7 +54,12 @@ export default function CheckboxField<T extends FieldValues>({
             />
           </FormControl>
           <div className="space-y-0.5 leading-none">
-            <FormLabel className="cursor-pointer text-sm font-medium text-foreground">
+            <FormLabel
+              className={cn(
+                "text-sm font-medium text-foreground",
+                disabled ? "cursor-not-allowed" : "cursor-pointer",
+              )}
+            >
               {label}
             </FormLabel>
             {description ? (

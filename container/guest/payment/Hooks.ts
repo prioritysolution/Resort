@@ -19,6 +19,7 @@ import {
   getPaymentListAPI,
   updatePaymentAPI,
 } from "./PaymentApis";
+import { buildPaymentReceipt, type PaymentReceipt } from "./paymentBill";
 import type {
   Payment,
   PaymentDue,
@@ -69,9 +70,15 @@ export function usePayment() {
     resolver: yupResolver(schema) as unknown as Resolver<PaymentFormValues>,
     defaultValues: emptyValues,
     mode: "onSubmit",
-    reValidateMode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
+  const [receiptSaving, setReceiptSaving] = useState(false);
+  const [pendingReceipt, setPendingReceipt] = useState<PaymentReceipt | null>(
+    null,
+  );
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   const [dueInfo, setDueInfo] = useState<PaymentDue | null>(null);
   const [dueLoading, setDueLoading] = useState(false);
   const [listMeta, setListMeta] = useState<PaymentListMeta | null>(null);
@@ -233,17 +240,69 @@ export function usePayment() {
   };
 
   const handleSubmit = async (values: PaymentFormValues) => {
-    await crud.handleSubmit(values);
+    setReceiptSaving(true);
+    try {
+      const amount = Number(values.remaining_amount);
+      const date = toApiDate(values.coll_date);
+      const editing = crud.editingRow;
+      const id = editing
+        ? editing.Collection_Id || editing.Coll_Id
+        : undefined;
+      const body = {
+        reservation_no: values.reservation_no.trim(),
+        ...(date ? { coll_date: date } : {}),
+        coll_mode: Number(values.coll_mode),
+        final_coll: values.final_coll,
+      };
+      const response =
+        id != null
+          ? await updatePaymentAPI(id, { ...body, coll_amount: amount })
+          : await addPaymentAPI({ ...body, remaining_amount: amount });
+
+      if (!isApiSuccess(response)) {
+        toast.error(apiMessage(response, "Save failed"));
+        return;
+      }
+
+      const next = buildPaymentReceipt(
+        { ...values, coll_date: date || values.coll_date },
+        dueInfo,
+      );
+      setPendingReceipt(next);
+      closeDialog();
+      void crud.reload().catch(() => {
+        /* list refresh is best-effort after the receipt is shown */
+      });
+    } finally {
+      setReceiptSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (crud.dialogOpen || !pendingReceipt) return;
+    setReceipt(pendingReceipt);
+    setReceiptOpen(true);
+    setPendingReceipt(null);
+  }, [crud.dialogOpen, pendingReceipt]);
+
+  const closeReceipt = () => {
+    setReceiptOpen(false);
+    setReceipt(null);
+    setPendingReceipt(null);
   };
 
   const checkoutDone = Number(dueInfo?.Checkout_Status) === 1;
 
   return {
     ...crud,
+    saving: receiptSaving || crud.saving,
     openCreate,
     openEdit,
     closeDialog,
     handleSubmit,
+    receipt,
+    receiptOpen,
+    closeReceipt,
     dueInfo,
     dueLoading,
     checkoutDone,

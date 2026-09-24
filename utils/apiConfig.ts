@@ -51,15 +51,31 @@ type RequestArgs = {
   bodyData?: unknown;
 };
 
+/** Same GET started again while the first is running (or just finished) shares one request. */
+const inflightGets = new Map<string, Promise<unknown>>();
+const GET_REUSE_MS = 400;
+
 export const doGetApiCall = async <T = unknown>({
   url,
 }: Pick<RequestArgs, "url">) => {
-  try {
-    const res = await axios.get<T>(url, { headers: getHeaders() });
-    return handleResponse<T>(res);
-  } catch (error) {
-    return handleError(error) as T & ApiCudResponse;
-  }
+  const existing = inflightGets.get(url);
+  if (existing) return existing as Promise<T>;
+
+  const request = (async () => {
+    try {
+      const res = await axios.get<T>(url, { headers: getHeaders() });
+      return handleResponse<T>(res);
+    } catch (error) {
+      return handleError(error) as T & ApiCudResponse;
+    } finally {
+      setTimeout(() => {
+        if (inflightGets.get(url) === request) inflightGets.delete(url);
+      }, GET_REUSE_MS);
+    }
+  })();
+
+  inflightGets.set(url, request);
+  return request as Promise<T>;
 };
 
 export const doPostApiCall = async <T = unknown>({

@@ -11,6 +11,7 @@ import {
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -284,7 +285,7 @@ export function MonthPicker<T extends FieldValues>({
               className={cn(
                 "relative z-10 h-10 w-full pr-20 transition-all duration-200 sm:h-11",
                 error && "border-destructive focus-visible:ring-destructive/50",
-                disabled && "cursor-not-allowed bg-muted/80",
+                disabled && disabledFieldClass,
                 className,
               )}
             />
@@ -301,7 +302,10 @@ export function MonthPicker<T extends FieldValues>({
               ) : null}
               <button
                 type="button"
-                className="cursor-pointer text-muted-foreground hover:text-foreground"
+                className={cn(
+                  "text-muted-foreground hover:text-foreground",
+                  disabled ? "cursor-not-allowed" : "cursor-pointer",
+                )}
                 aria-label="Open month picker"
                 disabled={disabled}
                 onClick={() => setOpen((prev) => !prev)}
@@ -322,7 +326,7 @@ export function MonthPicker<T extends FieldValues>({
                   !monthValue && "text-muted-foreground",
                   error &&
                     "border-destructive focus-visible:ring-destructive/50",
-                  disabled && "cursor-not-allowed bg-muted/80",
+                  disabled && disabledFieldClass,
                   className,
                 )}
               />

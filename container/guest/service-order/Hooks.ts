@@ -36,9 +36,9 @@ const emptyValues: ServiceOrderFormValues = {
   remarks: "",
 };
 const schema = yup.object({
-  reservation_no: yup.string().required(),
+  reservation_no: yup.string().trim().required("Reservation number is required"),
   order_date: yup.mixed<string | Date>().nullable().default(""),
-  service_id: yup.mixed().required(),
+  service_id: yup.mixed().required("Service is required"),
   quantity: yup.number().integer().min(1).default(1),
   remarks: yup.string().default(""),
 });
@@ -48,6 +48,8 @@ export function useServiceOrder() {
       schema,
     ) as unknown as Resolver<ServiceOrderFormValues>,
     defaultValues: emptyValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
   const [services, setServices] = useState<Array<{ Id: number; Name: string }>>(
     [],

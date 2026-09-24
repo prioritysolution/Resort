@@ -12,6 +12,7 @@ import {
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -232,7 +233,7 @@ export function DatePicker<T extends FieldValues>({
               className={cn(
                 "h-10 w-full pr-20 transition-all duration-200",
                 error && "border-destructive focus-visible:ring-destructive/50",
-                disabled && "cursor-not-allowed bg-muted/80",
+                disabled && disabledFieldClass,
                 className,
               )}
             />
@@ -251,7 +252,11 @@ export function DatePicker<T extends FieldValues>({
                 render={
                   <button
                     type="button"
-                    className="cursor-pointer text-muted-foreground hover:text-foreground"
+                    disabled={disabled}
+                    className={cn(
+                      "text-muted-foreground hover:text-foreground",
+                      disabled ? "cursor-not-allowed" : "cursor-pointer",
+                    )}
                     aria-label="Open calendar"
                   />
                 }
@@ -271,7 +276,7 @@ export function DatePicker<T extends FieldValues>({
                   "relative h-10 w-full justify-between px-3 text-left font-normal",
                   !date && "text-muted-foreground",
                   error && "border-destructive focus-visible:ring-destructive/50",
-                  disabled && "cursor-not-allowed bg-muted/80",
+                  disabled && disabledFieldClass,
                   className,
                 )}
               />

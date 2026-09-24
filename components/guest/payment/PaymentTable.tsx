@@ -46,8 +46,6 @@ const columns: GuestColumn<Payment>[] = [
 type Props = {
   rows: Payment[];
   loading: boolean;
-  onEdit: (row: Payment) => void;
-  onDelete: (row: Payment) => void;
 };
 
 export default function PaymentTable(props: Props) {
@@ -58,9 +56,6 @@ export default function PaymentTable(props: Props) {
       columns={columns}
       rowKey={(r, i) => r.Collection_Id || r.Coll_Id || i}
       emptyTitle="No payments found"
-      onEdit={props.onEdit}
-      onDelete={props.onDelete}
-      deleteLabel="Delete"
     />
   );
 }

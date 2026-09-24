@@ -51,11 +51,7 @@ export function CheckoutView(props: Props) {
         </>
       }
     >
-      <CheckoutTable
-        rows={props.rows}
-        loading={props.loading}
-        onDelete={props.setDeleteTarget}
-      />
+      <CheckoutTable rows={props.rows} loading={props.loading} />
     </ListPageFrame>
   );
 }

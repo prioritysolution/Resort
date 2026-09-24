@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 
 interface TextareaFieldProps<T extends FieldValues> {
   control: Control<T>;
@@ -58,7 +59,7 @@ const TextareaField = <T extends FieldValues>({
               aria-invalid={!!fieldState?.error?.message}
               className={cn(
                 "min-h-[96px] w-full rounded-md",
-                disabled && "cursor-not-allowed bg-muted/80",
+                disabled && disabledFieldClass,
                 className,
               )}
             />

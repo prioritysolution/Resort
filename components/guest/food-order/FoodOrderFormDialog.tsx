@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { PageLoader } from "@/components/shared";
 import InputField from "@/common/formFields/InputField";
+import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
 import DropdownField from "@/common/formFields/DropdownField";
 import TextareaField from "@/common/formFields/TextareaField";
 import SwitchField from "@/common/formFields/SwitchField";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import type {
   FoodOrder,
   FoodOrderFormValues,
@@ -62,14 +64,15 @@ export default function FoodOrderFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="grid grid-cols-1 gap-4 sm:grid-cols-2"
           >
-            <InputField
+            <ReservationSearchField
               control={form.control}
               name="reservation_no"
               label="Reservation number"
-              isRequired
+              placeholder="Enter or search reservation number"
             />
             <DatePicker
               control={form.control}
@@ -89,6 +92,7 @@ export default function FoodOrderFormDialog({
               label="Room"
               options={rooms}
               optionLabelKey="Name"
+              isRequired
             />
             <SwitchField
               control={form.control}

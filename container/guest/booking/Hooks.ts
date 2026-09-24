@@ -48,12 +48,24 @@ const emptyValues: BookingFormValues = {
 };
 
 const schema = yup.object({
-  guest_name: yup.string().required(),
-  contact_no: yup.string().required().max(15),
-  room_tid: yup.mixed().required(),
-  no_of_room: yup.number().min(1).required(),
+  guest_name: yup.string().trim().required("Guest name is required"),
+  contact_no: yup
+    .string()
+    .trim()
+    .required("Contact number is required")
+    .max(15, "Contact number must be at most 15 characters"),
+  room_tid: yup.mixed().required("Room type is required"),
+  no_of_room: yup
+    .number()
+    .typeError("Number of rooms is required")
+    .min(1, "At least 1 room is required")
+    .required("Number of rooms is required"),
   checkin_date: yup.mixed<string | Date>().required("Check-in date is required"),
-  stay_duration: yup.number().min(1).required(),
+  stay_duration: yup
+    .number()
+    .typeError("Stay duration is required")
+    .min(1, "Stay duration must be at least 1 night")
+    .required("Stay duration is required"),
   exp_chkout_dt: yup.mixed<string | Date>().nullable().default(""),
   agent_id: yup.mixed().default(""),
   note: yup.string().default(""),
@@ -68,7 +80,7 @@ const schema = yup.object({
   advance_mode: yup
     .number()
     .oneOf([1, 2, 3], "Select Cash, Bank, or Credit")
-    .required(),
+    .required("Payment mode is required"),
   is_refundable: yup.boolean().required().default(false),
 });
 
@@ -76,6 +88,8 @@ export function useBooking() {
   const form = useForm<BookingFormValues>({
     resolver: yupResolver(schema) as unknown as Resolver<BookingFormValues>,
     defaultValues: emptyValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const checkinDate = form.watch("checkin_date");

@@ -3,6 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { PageLoader } from "@/components/shared";
 import { Form } from "@/components/ui/form";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,6 +62,7 @@ const RoomDetailsFormDialog = ({
 
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="grid gap-4"
             autoComplete="off"

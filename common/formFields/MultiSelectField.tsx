@@ -8,6 +8,7 @@ import {
 } from "react-hook-form";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -112,6 +113,7 @@ export default function MultiSelectField<T extends FieldValues>({
                           "h-auto min-h-10 w-full justify-between px-3 py-2 font-normal",
                           fieldState.error &&
                             "border-destructive focus-visible:ring-destructive/30",
+                          disabled && disabledFieldClass,
                         )}
                       />
                     }

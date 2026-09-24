@@ -14,6 +14,7 @@ import { Copy } from "lucide-react";
 import InputField from "@/common/formFields/InputField";
 import DropdownField from "@/common/formFields/DropdownField";
 import TextareaField from "@/common/formFields/TextareaField";
+import { preventEnterSubmit } from "@/common/formFields/preventEnterSubmit";
 import {
   RESERVATION_GENDER_OPTIONS,
   type ReservationGuestFormValues,
@@ -63,6 +64,7 @@ export default function ReservationGuestDialog({
         </DialogHeader>
         <Form {...form}>
           <form
+            onKeyDown={preventEnterSubmit}
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >

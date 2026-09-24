@@ -13,12 +13,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 
 interface SwitchFieldProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label: string;
   description?: string;
+  disabled?: boolean;
 }
 
 const SwitchField = <T extends FieldValues>({
@@ -26,13 +29,19 @@ const SwitchField = <T extends FieldValues>({
   name,
   label,
   description,
+  disabled = false,
 }: SwitchFieldProps<T>) => {
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+        <FormItem
+          className={cn(
+            "flex flex-row items-center justify-between rounded-lg border p-4",
+            disabled && disabledFieldClass,
+          )}
+        >
           <div className="space-y-0.5">
             <FormLabel className="text-base font-medium">{label}</FormLabel>
             {description ? (
@@ -42,7 +51,9 @@ const SwitchField = <T extends FieldValues>({
           <FormControl>
             <Switch
               checked={Boolean(field.value)}
+              disabled={disabled}
               onCheckedChange={field.onChange}
+              className={disabled ? "cursor-not-allowed" : undefined}
             />
           </FormControl>
           <FormMessage />

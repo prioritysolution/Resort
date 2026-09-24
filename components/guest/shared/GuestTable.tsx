@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState, PageLoader } from "@/components/shared";
+import { cn } from "@/lib/utils";
 
 export type GuestColumn<T> = {
   label: string;
@@ -52,6 +53,8 @@ export default function GuestTable<T extends object>({
   secondaryLabel = "Complete",
   secondaryDisabled,
 }: Props<T>) {
+  const hasActions = Boolean(onEdit || onDelete || onSecondary);
+
   if (loading) return <PageLoader variant="section" label="Loading…" />;
   if (!rows.length)
     return (
@@ -62,29 +65,37 @@ export default function GuestTable<T extends object>({
     );
   return (
     <div className="w-full min-w-0">
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-14">#</TableHead>
+            <TableHead className="w-14 px-3">#</TableHead>
             {columns.map((column) => (
-              <TableHead key={column.label} className={column.className}>
+              <TableHead
+                key={column.label}
+                className={cn("px-3", column.className)}
+              >
                 {column.label}
               </TableHead>
             ))}
-            <TableHead className="text-right">Actions</TableHead>
+            {hasActions ? (
+              <TableHead className="px-3 text-right">Actions</TableHead>
+            ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row, index) => (
             <TableRow key={rowKey(row, index)}>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="px-3 py-3 text-muted-foreground">
                 {index + 1}
               </TableCell>
               {columns.map((column) => {
                 const value = column.value(row);
                 const status = column.label.toLowerCase() === "status";
                 return (
-                  <TableCell key={column.label} className={column.className}>
+                  <TableCell
+                    key={column.label}
+                    className={cn("px-3 py-3 whitespace-normal", column.className)}
+                  >
                     {status ? (
                       <Badge variant="secondary">{display(value)}</Badge>
                     ) : (
@@ -93,49 +104,51 @@ export default function GuestTable<T extends object>({
                   </TableCell>
                 );
               })}
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  {onSecondary && !secondaryDisabled?.(row) ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onSecondary(row)}
-                    >
-                      <CheckCircle2 className="size-4" />
-                      {secondaryLabel}
-                    </Button>
-                  ) : null}
-                  {onEdit ? (
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-primary"
-                      onClick={() => onEdit(row)}
-                      aria-label="Edit"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  ) : null}
-                  {onDelete ? (
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive"
-                      onClick={() => onDelete(row)}
-                      aria-label={deleteLabel}
-                    >
-                      {deleteLabel === "Cancel" ? (
-                        <XCircle className="size-4" />
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                    </Button>
-                  ) : null}
-                </div>
-              </TableCell>
+              {hasActions ? (
+                <TableCell className="px-3 py-3 text-right">
+                  <div className="flex justify-end gap-1">
+                    {onSecondary && !secondaryDisabled?.(row) ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onSecondary(row)}
+                      >
+                        <CheckCircle2 className="size-4" />
+                        {secondaryLabel}
+                      </Button>
+                    ) : null}
+                    {onEdit ? (
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-primary"
+                        onClick={() => onEdit(row)}
+                        aria-label="Edit"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    ) : null}
+                    {onDelete ? (
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => onDelete(row)}
+                        aria-label={deleteLabel}
+                      >
+                        {deleteLabel === "Cancel" ? (
+                          <XCircle className="size-4" />
+                        ) : (
+                          <Trash2 className="size-4" />
+                        )}
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>

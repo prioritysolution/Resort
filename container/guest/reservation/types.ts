@@ -1,5 +1,6 @@
 export type ReservationGuest = {
   Guest_Name?: string;
+  Guest_Nm?: string;
   Contact_No?: string;
   Age?: number;
   Gender?: string;
@@ -31,13 +32,20 @@ export type Reservation = {
   Address_1?: string | null;
   Address_2?: string | null;
   Age?: number | null;
+  age?: number | null;
   Gender?: string | null;
+  gender?: string | null;
   Is_Primary?: number | boolean | null;
+  is_primary?: number | boolean | null;
   /** API field */
   CheckIn_Date?: string;
   /** Legacy alias */
   Checkin_Date?: string;
+  checkin_date?: string;
   Checkout_Date?: string;
+  /** API details field */
+  CheckOut_Date?: string;
+  checkout_date?: string;
   Adult_No?: number;
   Child_No?: number;
   Room_Id?: number | number[];
@@ -58,6 +66,9 @@ export type Reservation = {
   amount?: number | string | null;
   Mode?: number | string | null;
   mode?: number | string | null;
+  payment_mode?: number | string | null;
+  Advance_Mode?: number | string | null;
+  advance_mode?: number | string | null;
   Agent_Id?: number | null;
   Agent_Name?: string | null;
   Special_Request?: string | null;

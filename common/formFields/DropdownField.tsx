@@ -26,6 +26,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { disabledFieldClass } from "@/common/formFields/disabledField";
 
 interface DropdownProps<T extends FieldValues> {
   control: Control<T>;
@@ -351,15 +352,19 @@ const DropdownField = <T extends FieldValues>({
               hasError
                 ? "border-destructive focus:border-destructive focus:ring-destructive/15"
                 : "border-input",
-              (disabled || loading) &&
-                "cursor-not-allowed bg-muted/80 text-muted-foreground opacity-70",
+              (disabled || loading) && disabledFieldClass,
             )}
           />
           <div className="absolute top-1/2 right-3.5 flex -translate-y-1/2 items-center gap-1.5">
             {loading ? <Spinner /> : null}
             <button
               type="button"
-              className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted focus:outline-none disabled:cursor-not-allowed"
+              className={cn(
+                "rounded-md p-1 transition-colors hover:bg-muted focus:outline-none",
+                disabled || loading
+                  ? "cursor-not-allowed"
+                  : "cursor-pointer",
+              )}
               disabled={disabled || loading}
               tabIndex={-1}
               onClick={(e) => {

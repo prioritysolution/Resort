@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useGuestCrud } from "@/container/guest/shared/useGuestCrud";
 import { apiMessage, isApiSuccess } from "@/container/guest/shared/types";
 import { getMenuDetailsListAPI } from "@/container/org/menuDetails/MenuDetailsApis";
+import { getRoomDetailsListAPI } from "@/container/org/roomDetails/RoomDetailsApis";
 import { getStaffProfileListAPI } from "@/container/org/staffProfile/StaffProfileApis";
 import { getReservationDetailsAPI } from "@/container/guest/reservation/ReservationApis";
 import {
@@ -70,6 +71,18 @@ export function useFoodOrder() {
   const [rooms, setRooms] = useState<Array<{ Id: number; Name: string }>>([]);
   const [staff, setStaff] = useState<Array<{ Id: number; Name: string }>>([]);
   const reservationNo = form.watch("reservation_no");
+
+  const loadAllRooms = useCallback(async () => {
+    const response = await getRoomDetailsListAPI();
+    return (response.data || [])
+      .filter((row) => row.Room_Id != null)
+      .map((row) => {
+        const roomNo = String(row.Room_No || "").trim();
+        const roomType = String(row.Room_TName || "").trim();
+        const name = [roomNo, roomType].filter(Boolean).join(" — ");
+        return { Id: row.Room_Id, Name: name || `Room ${row.Room_Id}` };
+      });
+  }, []);
 
   const loadReservationRooms = useCallback(
     async (reservationNoValue: string) => {
@@ -135,9 +148,22 @@ export function useFoodOrder() {
   useEffect(() => {
     const value = String(reservationNo || "").trim();
     if (!value) {
-      setRooms([]);
-      form.setValue("room_id", "", { shouldValidate: false });
-      return;
+      let cancelled = false;
+      void (async () => {
+        const options = await loadAllRooms();
+        if (cancelled) return;
+        setRooms(options);
+        const current = form.getValues("room_id");
+        const stillValid = options.some(
+          (row) => String(row.Id) === String(current),
+        );
+        if (current && !stillValid) {
+          form.setValue("room_id", "", { shouldValidate: false });
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
 
     let cancelled = false;
@@ -170,7 +196,7 @@ export function useFoodOrder() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [form, loadReservationRooms, reservationNo]);
+  }, [form, loadAllRooms, loadReservationRooms, reservationNo]);
   const crud = useGuestCrud<FoodOrder, FoodOrderFormValues, FoodOrderPayload>({
     form,
     emptyValues,

@@ -10,10 +10,11 @@ export type CollectionReportRow = {
 };
 
 export type CollectionReportFormValues = {
-  collection_type: "summary" | "reservation";
+  collection_type: "summary" | "reservation" | "booking";
   date_mode: "range" | "month";
   from_date: string | Date;
   to_date: string | Date;
   month: string;
   reservation_no: string;
+  booking_no: string;
 };

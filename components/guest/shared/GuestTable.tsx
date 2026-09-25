@@ -64,28 +64,33 @@ export default function GuestTable<T extends object>({
       />
     );
   return (
-    <div className="w-full min-w-0">
-      <Table className="table-fixed">
+    <div className="w-full min-w-0 max-w-full">
+      <Table className="w-max min-w-full">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-14 px-3">#</TableHead>
+            <TableHead className="w-12 whitespace-nowrap px-3">#</TableHead>
             {columns.map((column) => (
               <TableHead
                 key={column.label}
-                className={cn("px-3", column.className)}
+                className={cn(
+                  "min-w-[7.5rem] whitespace-nowrap px-3",
+                  column.className,
+                )}
               >
                 {column.label}
               </TableHead>
             ))}
             {hasActions ? (
-              <TableHead className="px-3 text-right">Actions</TableHead>
+              <TableHead className="min-w-[6.5rem] whitespace-nowrap px-3 text-right">
+                Actions
+              </TableHead>
             ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row, index) => (
             <TableRow key={rowKey(row, index)}>
-              <TableCell className="px-3 py-3 text-muted-foreground">
+              <TableCell className="whitespace-nowrap px-3 py-3 text-muted-foreground">
                 {index + 1}
               </TableCell>
               {columns.map((column) => {
@@ -94,7 +99,10 @@ export default function GuestTable<T extends object>({
                 return (
                   <TableCell
                     key={column.label}
-                    className={cn("px-3 py-3 whitespace-normal", column.className)}
+                    className={cn(
+                      "min-w-[7.5rem] whitespace-nowrap px-3 py-3",
+                      column.className,
+                    )}
                   >
                     {status ? (
                       <Badge variant="secondary">{display(value)}</Badge>
@@ -105,7 +113,7 @@ export default function GuestTable<T extends object>({
                 );
               })}
               {hasActions ? (
-                <TableCell className="px-3 py-3 text-right">
+                <TableCell className="whitespace-nowrap px-3 py-3 text-right">
                   <div className="flex justify-end gap-1">
                     {onSecondary && !secondaryDisabled?.(row) ? (
                       <Button

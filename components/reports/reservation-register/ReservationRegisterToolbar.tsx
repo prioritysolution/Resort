@@ -5,9 +5,9 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/shared";
 import DatePicker from "@/common/formFields/DatePicker";
-import InputField from "@/common/formFields/InputField";
 import MonthPicker from "@/common/formFields/MonthPicker";
 import RadioField from "@/common/formFields/RadioField";
+import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
 import { REPORT_DATE_MODE_OPTIONS } from "@/container/reports/shared/types";
 import type { ReservationReportFormValues } from "@/container/reports/reservation-register/types";
 
@@ -38,11 +38,11 @@ export default function ReservationRegisterToolbar({
           numeric={false}
           formItemClassName="sm:col-span-2 lg:col-span-4"
         />
-        <InputField
+        <ReservationSearchField
           control={form.control}
           name="reservation_no"
           label="Reservation number"
-          placeholder="Optional — can be used alone"
+          placeholder="Optional — enter or search a reservation"
         />
         {dateMode === "month" ? (
           <MonthPicker

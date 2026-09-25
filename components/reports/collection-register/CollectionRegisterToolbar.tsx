@@ -5,9 +5,10 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/shared";
 import DatePicker from "@/common/formFields/DatePicker";
-import InputField from "@/common/formFields/InputField";
 import MonthPicker from "@/common/formFields/MonthPicker";
 import RadioField from "@/common/formFields/RadioField";
+import BookingSearchField from "@/common/Searchable/BookingSearchField";
+import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
 import {
   COLLECTION_TYPE_OPTIONS,
   REPORT_DATE_MODE_OPTIONS,
@@ -51,13 +52,21 @@ export default function CollectionRegisterToolbar({
           formItemClassName="sm:col-span-2 lg:col-span-4"
         />
         {collectionType === "reservation" ? (
-          <InputField
+          <ReservationSearchField
             control={form.control}
             name="reservation_no"
             label="Reservation number"
-            placeholder="Enter reservation number"
+            placeholder="Enter or search reservation number"
             isRequired
-            // formItemClassName="sm:col-span-2"
+          />
+        ) : null}
+        {collectionType === "booking" ? (
+          <BookingSearchField
+            control={form.control}
+            name="booking_no"
+            label="Booking number"
+            placeholder="Enter or search booking number"
+            isRequired
           />
         ) : null}
         {dateMode === "month" ? (
@@ -75,14 +84,12 @@ export default function CollectionRegisterToolbar({
               name="from_date"
               label="From date"
               placeholder="Select from date"
-              isRequired
             />
             <DatePicker
               control={form.control}
               name="to_date"
               label="To date"
               placeholder="Select to date"
-              isRequired
             />
           </>
         )}

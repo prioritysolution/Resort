@@ -24,14 +24,15 @@ import type {
 
 const schema = yup.object({
   collection_type: yup
-    .mixed<"summary" | "reservation">()
-    .oneOf(["summary", "reservation"])
+    .mixed<"summary" | "reservation" | "booking">()
+    .oneOf(["summary", "reservation", "booking"])
     .required(),
   date_mode: yup.mixed<"range" | "month">().oneOf(["range", "month"]).required(),
   from_date: yup.mixed<string | Date>().default(""),
   to_date: yup.mixed<string | Date>().default(""),
   month: yup.string().default(""),
   reservation_no: yup.string().default(""),
+  booking_no: yup.string().default(""),
 });
 
 export function useCollectionRegister() {
@@ -43,6 +44,7 @@ export function useCollectionRegister() {
       ...emptyDateFilterValues(),
       collection_type: "summary",
       reservation_no: "",
+      booking_no: "",
     },
     mode: "onSubmit",
   });
@@ -68,23 +70,20 @@ export function useCollectionRegister() {
   const runReport = useCallback(
     async (values: CollectionReportFormValues) => {
       const dateParams = buildDateQueryParams(values);
-      const hasDates =
-        values.date_mode === "month"
-          ? Boolean(dateParams.month)
-          : Boolean(dateParams.from_date && dateParams.to_date);
-
-      if (!hasDates) {
-        toast.error(
-          values.date_mode === "month"
-            ? "Select a month"
-            : "Select from date and to date",
-        );
+      if (values.date_mode === "month" && !dateParams.month) {
+        toast.error("Select a month");
         return;
       }
 
       const reservationNo = values.reservation_no.trim();
       if (values.collection_type === "reservation" && !reservationNo) {
         toast.error("Reservation number is required for reservation type");
+        return;
+      }
+
+      const bookingNo = values.booking_no.trim();
+      if (values.collection_type === "booking" && !bookingNo) {
+        toast.error("Booking number is required for booking type");
         return;
       }
 
@@ -96,6 +95,9 @@ export function useCollectionRegister() {
             ...dateParams,
             ...(values.collection_type === "reservation"
               ? { reservation_no: reservationNo }
+              : {}),
+            ...(values.collection_type === "booking"
+              ? { booking_no: bookingNo }
               : {}),
           }),
         );
@@ -116,6 +118,9 @@ export function useCollectionRegister() {
         setMeta({
           collection_type: response.collection_type ?? values.collection_type,
           reservation_no: response.reservation_no ?? null,
+          booking_no:
+            response.booking_no ??
+            (values.collection_type === "booking" ? bookingNo : null),
           total_records: response.total_records ?? null,
           total_collection: response.total_collection ?? null,
         });

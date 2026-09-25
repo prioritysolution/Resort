@@ -12,7 +12,7 @@ export function CollectionRegisterView(props: Props) {
   return (
     <ListPageFrame
       title="Collection register"
-      description="Collections by date/month, or for one reservation."
+      description="Collections by date or month, for one reservation, or for one booking."
       toolbar={
         <CollectionRegisterToolbar
           form={props.form}
@@ -25,6 +25,7 @@ export function CollectionRegisterView(props: Props) {
         items={[
           { label: "Type", value: props.meta?.collection_type },
           { label: "Reservation", value: props.meta?.reservation_no },
+          { label: "Booking", value: props.meta?.booking_no },
           { label: "Total records", value: props.meta?.total_records },
           {
             label: "Total collection",

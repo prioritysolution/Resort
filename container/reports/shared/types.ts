@@ -19,6 +19,7 @@ export type ReportListMeta = {
   collection_type?: string | null;
   commission_type?: string | null;
   reservation_no?: string | null;
+  booking_no?: string | null;
   month?: string | null;
   agent_id?: number | string | null;
 };
@@ -97,6 +98,7 @@ export const REPORT_DATE_MODE_OPTIONS = [
 export const COLLECTION_TYPE_OPTIONS = [
   { value: "summary", label: "Summary (all)" },
   { value: "reservation", label: "By reservation" },
+  { value: "booking", label: "By booking" },
 ] as const;
 
 export const COMMISSION_TYPE_OPTIONS = [

@@ -52,12 +52,12 @@ export function ListPageFrame({
             {toolbar}
           </div>
 
-          <div className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="relative z-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden">
             <ScrollArea
               horizontal={false}
-              className="min-h-0 w-full flex-1"
+              className="min-h-0 w-full min-w-0 max-w-full flex-1"
             >
-              <div className="min-w-0 p-0">{children}</div>
+              <div className="w-full min-w-0 max-w-full">{children}</div>
             </ScrollArea>
           </div>
         </PageSection>

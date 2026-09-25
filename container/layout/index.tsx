@@ -66,7 +66,7 @@ const DashboardLayoutContainer = ({
             handleSelectSuggestion={handleSelectSuggestion}
             hasMenuData={hasMenuData}
           />
-          <div className="min-h-0 flex-1 overflow-hidden bg-background px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+          <div className="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-hidden bg-background px-3 py-3 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
             {children}
           </div>
           {/* <Footer /> */}

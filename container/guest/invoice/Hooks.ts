@@ -19,17 +19,18 @@ const schema = yup.object({
     .string()
     .trim()
     .required("Reservation number is required"),
+  type: yup.string().oneOf(["room", "food"]).required(),
 });
 
 export function useInvoice() {
   const form = useForm<InvoiceFormValues>({
     resolver: yupResolver(schema) as unknown as Resolver<InvoiceFormValues>,
-    defaultValues: { reservation_no: "" },
+    defaultValues: { reservation_no: "", type: "room" },
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
 
-  const [bills, setBills] = useState<Checkout[]>([]);
+  const [bills, setBills] = useState<any[]>([]); // Assuming 'any' for now since the new API structure is different
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -42,15 +43,24 @@ export function useInvoice() {
 
     setLoading(true);
     try {
-      const response = await getInvoiceListAPI(reservationNo);
+      const response = await getInvoiceListAPI(reservationNo, values.type);
       if (!isApiSuccess(response)) {
         setBills([]);
         toast.error(apiMessage(response, "Invoice not found"));
         return;
       }
-      setBills(
-        extractListRows<Checkout>(response as unknown as Record<string, unknown>),
-      );
+      
+      // The API returns a single invoice object, so we put it in an array to map over it in the view, or we can change how bills are handled.
+      // Based on API doc, response format is { Error_Code: 0, Message: "Success", invoice: { ... } }
+      const invoiceData = (response as any).invoice;
+      if (invoiceData) {
+        setBills([{ ...invoiceData, _type: values.type }]); // Added _type to help InvoiceBill differentiate if needed
+      } else {
+        setBills([]);
+      }
+    } catch (error) {
+      setBills([]);
+      toast.error("Failed to fetch invoice");
     } finally {
       setSearched(true);
       setLoading(false);

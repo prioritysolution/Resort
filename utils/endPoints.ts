@@ -188,6 +188,12 @@ export const endPoints = {
   checkoutDelete: (id: number | string) =>
     `${createApi}/checkout/delete/${id}`,
 
+  // Invoice
+  invoiceRoom: (reservationNo: string) =>
+    `${createApi}/invoice/room?reservation_no=${encodeURIComponent(reservationNo)}`,
+  invoiceFood: (reservationNo: string) =>
+    `${createApi}/invoice/food?reservation_no=${encodeURIComponent(reservationNo)}`,
+
   // Reports
   reportBooking: (query = "") =>
     `${createApi}/report/booking${query ? `?${query}` : ""}`,

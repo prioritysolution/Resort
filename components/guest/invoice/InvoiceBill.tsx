@@ -1,31 +1,33 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { format, isValid, parseISO } from "date-fns";
-import { Download, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
+import { useReactToPrint } from "react-to-print";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import getCookieData from "@/utils/getCookieData";
-import {
-  buildCheckoutBillLines,
-  downloadCheckoutBill,
-  formatBillMoney,
-  printCheckoutBill,
-} from "@/container/guest/checkout/checkoutBill";
-import {
-  checkoutDateOf,
-  checkoutDueAmount,
-  type Checkout,
-} from "@/container/guest/checkout/types";
+import { RoomInvoicePrint } from "./RoomInvoicePrint";
+import { FoodInvoicePrint } from "./FoodInvoicePrint";
 
 type Props = {
-  bill: Checkout;
+  bill: any;
 };
 
 const displayDate = (value?: string) => {
   if (!value) return "—";
   const parsed = parseISO(value.slice(0, 10));
   return isValid(parsed) ? format(parsed, "dd MMM yyyy") : value;
+};
+
+const formatBillMoney = (value: unknown) => {
+  if (value === "" || value == null) return "0.00";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 export default function InvoiceBill({ bill }: Props) {
@@ -37,10 +39,15 @@ export default function InvoiceBill({ bill }: Props) {
     [],
   );
 
-  const lines = buildCheckoutBillLines(bill).filter(
-    (row) => row.label !== "Balance / due",
-  );
-  const due = checkoutDueAmount(bill);
+  const printRef = useRef<HTMLDivElement>(null);
+  
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+  });
+
+  const isRoom = bill._type === "room";
+  const due = bill.payment?.balance_due || 0;
+  // Fallback to older status if payment status isn't available
   const cancelled = Number(bill.Status) === 0;
 
   return (
@@ -49,10 +56,10 @@ export default function InvoiceBill({ bill }: Props) {
         <div className="min-w-0 space-y-1">
           <p className="text-xs text-muted-foreground">{hotelName}</p>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            {bill.Bill_No || "Invoice"}
+            {bill.invoice_no || "Invoice"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {bill.Guest_Name || "—"} · Reservation {bill.Reservation_No || "—"}
+            {bill.guest?.name || "—"} · {isRoom ? `Room ${bill.stay?.rooms?.[0]?.room_no || "—"}` : `Room ${bill.guest?.room_no || "—"}`}
           </p>
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
@@ -60,37 +67,34 @@ export default function InvoiceBill({ bill }: Props) {
             {cancelled ? "Cancelled" : "Active"}
           </Badge>
           <p className="text-sm text-muted-foreground">
-            Checkout {displayDate(checkoutDateOf(bill))}
+            Invoice Date: {displayDate(bill.invoice_date)}
           </p>
         </div>
       </div>
 
       <dl className="divide-y divide-border">
-        {lines.map((row) => (
-          <div
-            key={row.label}
-            className="flex items-center justify-between gap-4 px-4 py-2.5"
-          >
-            <dt
-              className={
-                row.bold
-                  ? "text-sm font-semibold text-foreground"
-                  : "text-sm text-muted-foreground"
-              }
-            >
-              {row.label}
-            </dt>
-            <dd
-              className={
-                row.bold
-                  ? "text-sm font-semibold text-foreground"
-                  : "text-sm font-medium text-foreground"
-              }
-            >
-              {formatBillMoney(row.value)}
-            </dd>
-          </div>
-        ))}
+        <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+          <dt className="text-sm font-semibold text-foreground">
+            {isRoom ? "Room Bill" : "Food Bill"}
+          </dt>
+          <dd className="text-sm font-semibold text-foreground">
+            {formatBillMoney(isRoom ? bill.billing?.room_bill : bill.billing?.food_bill)}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+          <dt className="text-sm font-semibold text-foreground">
+            Total GST
+          </dt>
+          <dd className="text-sm font-semibold text-foreground">
+            {formatBillMoney((bill.billing?.cgst_amount || 0) + (bill.billing?.sgst_amount || 0))}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+          <dt className="text-sm font-semibold text-foreground">Grand Total</dt>
+          <dd className="text-sm font-semibold text-foreground">
+            {formatBillMoney(bill.billing?.grand_total)}
+          </dd>
+        </div>
         <div className="flex items-center justify-between gap-4 bg-primary/5 px-4 py-3">
           <dt className="text-sm font-semibold text-foreground">Due</dt>
           <dd className="text-sm font-semibold text-primary">
@@ -99,27 +103,20 @@ export default function InvoiceBill({ bill }: Props) {
         </div>
       </dl>
 
+      {/* download and print buttons */}
       <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => downloadCheckoutBill(bill, hotelName, "txt")}
-        >
-          <Download className="size-4" />
-          Download TXT
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => downloadCheckoutBill(bill, hotelName, "html")}
-        >
-          <Download className="size-4" />
-          Download HTML
-        </Button>
-        <Button type="button" onClick={() => printCheckoutBill(bill, hotelName)}>
-          <Printer className="size-4" />
+        <Button type="button" onClick={() => handlePrint()}>
+          <Printer className="size-4 mr-2" />
           Print
         </Button>
+      </div>
+
+      <div className="absolute -left-[10000px] -top-[10000px]">
+        {isRoom ? (
+          <RoomInvoicePrint ref={printRef} bill={bill} hotelName={hotelName} />
+        ) : (
+          <FoodInvoicePrint ref={printRef} bill={bill} hotelName={hotelName} />
+        )}
       </div>
     </article>
   );

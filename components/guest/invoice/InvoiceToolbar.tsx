@@ -5,6 +5,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/shared";
 import ReservationSearchField from "@/common/Searchable/ReservationSearchField";
+import RadioField from "@/common/formFields/RadioField";
 import type { InvoiceFormValues } from "@/container/guest/invoice/types";
 
 type Props = {
@@ -18,7 +19,7 @@ export default function InvoiceToolbar({ form, loading, onSubmit }: Props) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-3 sm:flex-row sm:items-end"
+        className="flex flex-col gap-4 sm:flex-row sm:items-end"
       >
         <ReservationSearchField
           control={form.control}
@@ -27,6 +28,18 @@ export default function InvoiceToolbar({ form, loading, onSubmit }: Props) {
           placeholder="Enter or search reservation number"
           isRequired
           formItemClassName="w-full sm:max-w-md"
+        />
+        <RadioField
+          control={form.control}
+          name="type"
+          label="Invoice Type"
+          numeric={false}
+          options={[
+            { value: "room", label: "Room" },
+            { value: "food", label: "Food" },
+          ]}
+          formItemClassName="w-full sm:w-auto"
+          className="flex-nowrap"
         />
         <Button
           type="submit"

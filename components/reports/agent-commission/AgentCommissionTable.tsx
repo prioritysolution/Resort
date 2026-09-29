@@ -6,7 +6,7 @@ import GuestTable, {
 import { formatReportMoney } from "@/container/reports/shared/types";
 import type { AgentCommissionReportRow } from "@/container/reports/agent-commission/types";
 
-const allColumns: GuestColumn<AgentCommissionReportRow>[] = [
+export const allColumns: GuestColumn<AgentCommissionReportRow>[] = [
   { label: "Month", value: (r) => r.Comm_Month || "—" },
   { label: "Agent", value: (r) => r.Agent_Name || "—" },
   { label: "Checkouts", value: (r) => r.Checkout_Count ?? "—" },
@@ -17,7 +17,7 @@ const allColumns: GuestColumn<AgentCommissionReportRow>[] = [
   },
 ];
 
-const agentColumns: GuestColumn<AgentCommissionReportRow>[] = [
+export const agentColumns: GuestColumn<AgentCommissionReportRow>[] = [
   { label: "Month", value: (r) => r.Comm_Month || "—" },
   {
     label: "Checkout date",

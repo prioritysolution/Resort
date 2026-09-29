@@ -55,7 +55,7 @@ export function useBookingRegister() {
       if (
         values.date_mode === "month"
           ? !dateParams.month
-          : !dateParams.from_date || !dateParams.to_date
+          : !(dateParams as any).from_date || !(dateParams as any).to_date
       ) {
         toast.error(
           values.date_mode === "month"

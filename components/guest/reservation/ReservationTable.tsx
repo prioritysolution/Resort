@@ -21,7 +21,6 @@ const columns: GuestColumn<Reservation>[] = [
     label: "Check-in",
     value: (r: Reservation) => r.CheckIn_Date || r.Checkin_Date,
   },
-  { label: "Status", value: (r: Reservation) => r.Status },
 ];
 
 type Props = {

@@ -54,7 +54,6 @@ const UsersTable = ({
             <TableHead className="min-w-[10rem]">Branch</TableHead>
             <TableHead className="min-w-[10rem]">Resort</TableHead>
             <TableHead className="min-w-[6rem]">Active</TableHead>
-            <TableHead className="min-w-[6rem]">Status</TableHead>
             <TableHead className="min-w-[7rem] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -81,19 +80,6 @@ const UsersTable = ({
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {row.Resort_Name || "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "rounded-md border-0 font-medium",
-                      active
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {active ? "Active" : "Inactive"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {row.Status || "—"}

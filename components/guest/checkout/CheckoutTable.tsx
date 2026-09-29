@@ -32,10 +32,6 @@ const columns: GuestColumn<Checkout>[] = [
     label: "Due",
     value: (r) => money(checkoutDueAmount(r)),
   },
-  {
-    label: "Status",
-    value: (r) => (Number(r.Status) === 0 ? "Cancelled" : "Active"),
-  },
 ];
 
 type Props = {

@@ -53,8 +53,7 @@ const RoomDetailsTable = ({
           <TableHead className="min-w-[8rem]">Description</TableHead>
           <TableHead className="min-w-[4.5rem] text-right">Adult</TableHead>
           <TableHead className="min-w-[4.5rem] text-right">Child</TableHead>
-          <TableHead className="min-w-[6.5rem]">Booking</TableHead>
-          <TableHead className="min-w-[5.5rem]">Status</TableHead>
+          <TableHead className="min-w-[6.5rem] text-center">Booking</TableHead>
           <TableHead className="sticky right-0 z-10 min-w-[6.5rem] bg-card text-right">
             Actions
           </TableHead>
@@ -82,7 +81,7 @@ const RoomDetailsTable = ({
               <TableCell className="text-right tabular-nums">
                 {row.Child}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-center">
                 <Badge
                   variant="secondary"
                   className={cn(
@@ -92,20 +91,7 @@ const RoomDetailsTable = ({
                       : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {bookingAllowed ? "Allowed" : "Blocked"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "rounded-md border-0 font-medium",
-                    active
-                      ? "bg-success/15 text-success"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {active ? "Active" : "Inactive"}
+                  {bookingAllowed ? "Yes" : "No"}
                 </Badge>
               </TableCell>
               <TableCell className="sticky right-0 z-10 bg-card text-right">

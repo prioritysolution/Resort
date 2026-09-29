@@ -4,11 +4,21 @@ import { ListPageFrame } from "@/components/shared";
 import ReportMetaBar from "@/components/reports/shared/ReportMetaBar";
 import type { useBookingRegister } from "@/container/reports/booking-register/Hooks";
 import BookingRegisterToolbar from "./BookingRegisterToolbar";
-import BookingRegisterTable from "./BookingRegisterTable";
+import BookingRegisterTable, { bookingColumns } from "./BookingRegisterTable";
+import { PrintDownloadActions } from "../shared/PrintDownloadActions";
 
 type Props = ReturnType<typeof useBookingRegister>;
 
 export function BookingRegisterView(props: Props) {
+  const printColumns = bookingColumns.map(c => c.label);
+  const printData = props.rows.map(row => {
+    const newRow: any = {};
+    bookingColumns.forEach(c => {
+      newRow[c.label] = c.value(row);
+    });
+    return newRow;
+  });
+
   return (
     <ListPageFrame
       title="Booking register"
@@ -20,8 +30,9 @@ export function BookingRegisterView(props: Props) {
           onSubmit={props.runReport}
         />
       }
+      action={<PrintDownloadActions title="Booking register" columns={printColumns} data={printData} />}
     >
-      <ReportMetaBar
+      {/* <ReportMetaBar
         items={[
           { label: "Total records", value: props.meta?.total_records },
           {
@@ -30,7 +41,7 @@ export function BookingRegisterView(props: Props) {
             emphasize: true,
           },
         ]}
-      />
+      /> */}
       <BookingRegisterTable
         rows={props.rows}
         loading={props.loading}

@@ -54,7 +54,6 @@ const MenuDetailsTable = ({
             <TableHead className="min-w-[8rem]">Short name</TableHead>
             <TableHead className="min-w-[10rem]">Description</TableHead>
             <TableHead className="min-w-[6rem] text-right">Rate</TableHead>
-            <TableHead className="min-w-[6rem]">Status</TableHead>
             <TableHead className="min-w-[7rem] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -86,19 +85,6 @@ const MenuDetailsTable = ({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {row.Rate}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "rounded-md border-0 font-medium",
-                      active
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {active ? "Active" : "Inactive"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

@@ -48,7 +48,6 @@ const MenuCategoryTable = ({
           <TableRow className="hover:bg-transparent">
             <TableHead className="min-w-[4rem] whitespace-nowrap">#</TableHead>
             <TableHead className="min-w-[14rem]">Category</TableHead>
-            <TableHead className="min-w-[6rem]">Status</TableHead>
             <TableHead className="min-w-[7rem] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -62,19 +61,6 @@ const MenuCategoryTable = ({
                 </TableCell>
                 <TableCell className="font-medium text-foreground">
                   {row.Categ_Name}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "rounded-md border-0 font-medium",
-                      active
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {active ? "Active" : "Inactive"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

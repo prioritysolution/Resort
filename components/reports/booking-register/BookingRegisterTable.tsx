@@ -6,7 +6,7 @@ import GuestTable, {
 import { formatReportMoney } from "@/container/reports/shared/types";
 import type { BookingReportRow } from "@/container/reports/booking-register/types";
 
-const columns: GuestColumn<BookingReportRow>[] = [
+export const bookingColumns: GuestColumn<BookingReportRow>[] = [
   { label: "Register date", value: (r) => r.Register_Date || "—" },
   { label: "Booking no.", value: (r) => r.Booking_No || "—" },
   { label: "Guest", value: (r) => r.Guest_Name || "—" },
@@ -40,7 +40,7 @@ export default function BookingRegisterTable({
     <GuestTable
       rows={rows}
       loading={loading}
-      columns={columns}
+      columns={bookingColumns}
       rowKey={(r, i) => r.Booking_No || i}
       emptyTitle={
         searched ? "No bookings found for this filter" : "Run a report to view bookings"

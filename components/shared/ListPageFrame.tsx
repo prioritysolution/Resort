@@ -20,6 +20,8 @@ type ListPageFrameProps = {
   overlays?: ReactNode;
   /** Optional controls above the card (e.g. tabs) */
   beforeSection?: ReactNode;
+  /** Header action buttons (e.g. Print/PDF) */
+  action?: ReactNode;
 };
 
 /**
@@ -32,10 +34,11 @@ export function ListPageFrame({
   children,
   overlays,
   beforeSection,
+  action,
 }: ListPageFrameProps) {
   return (
     <PageShell className="h-full">
-      <PageHeader title={title} description={description} />
+      <PageHeader title={title} description={description} action={action} />
 
       <PageShellContent scroll={false}>
         {beforeSection ? (

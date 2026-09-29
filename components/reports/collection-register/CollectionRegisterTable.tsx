@@ -15,7 +15,7 @@ const modeLabel = (mode: unknown) => {
   );
 };
 
-const columns: GuestColumn<CollectionReportRow>[] = [
+export const collectionColumns: GuestColumn<CollectionReportRow>[] = [
   { label: "Register date", value: (r) => r.Register_Date || "—" },
   { label: "Collection ID", value: (r) => r.Collection_Id ?? "—" },
   { label: "Reservation no.", value: (r) => r.Reservation_No || "—" },
@@ -45,7 +45,7 @@ export default function CollectionRegisterTable({
     <GuestTable
       rows={rows}
       loading={loading}
-      columns={columns}
+      columns={collectionColumns}
       rowKey={(r, i) => r.Collection_Id || i}
       emptyTitle={
         searched

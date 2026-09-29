@@ -33,11 +33,6 @@ const columns: GuestColumn<FoodOrder>[] = [
     value: (r: FoodOrder) => money(r.Tot_Amount),
     className: "text-right tabular-nums",
   },
-  {
-    label: "Status",
-    value: (r: FoodOrder) =>
-      Number(r.Order_Status) === 1 ? "Delivered" : "Not delivered",
-  },
 ];
 type Props = {
   rows: FoodOrder[];

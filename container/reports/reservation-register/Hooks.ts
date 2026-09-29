@@ -65,7 +65,7 @@ export function useReservationRegister() {
       const hasDates =
         values.date_mode === "month"
           ? Boolean(dateParams.month)
-          : Boolean(dateParams.from_date && dateParams.to_date);
+          : Boolean((dateParams as any).from_date && (dateParams as any).to_date);
 
       if (!reservationNo && !hasDates) {
         toast.error("Enter a reservation number or select dates / month");

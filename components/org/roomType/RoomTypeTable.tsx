@@ -59,7 +59,6 @@ const RoomTypeTable = ({
             <TableHead className="min-w-[12rem]">Room type</TableHead>
             <TableHead className="min-w-[8rem] text-right">Charges</TableHead>
             <TableHead className="min-w-[8rem] text-right">Extra bed</TableHead>
-            <TableHead className="min-w-[6rem]">Status</TableHead>
             <TableHead className="min-w-[7rem] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -79,19 +78,6 @@ const RoomTypeTable = ({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   ₹ {formatMoney(row.Extra_Bed_Charges)}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "rounded-md border-0 font-medium",
-                      active
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {active ? "Active" : "Inactive"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

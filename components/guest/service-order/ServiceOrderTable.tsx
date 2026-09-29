@@ -12,11 +12,6 @@ const columns: GuestColumn<ServiceOrder>[] = [
     value: (r: ServiceOrder) => r.Service_Name || r.Service_Id,
   },
   { label: "Quantity", value: (r: ServiceOrder) => r.Quantity },
-  {
-    label: "Status",
-    value: (r: ServiceOrder) =>
-      Number(r.Order_Status) === 1 ? "Complete" : "Booked",
-  },
 ];
 type Props = {
   rows: ServiceOrder[];

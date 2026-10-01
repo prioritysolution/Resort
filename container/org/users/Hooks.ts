@@ -176,10 +176,12 @@ export const useUsers = () => {
         return;
       }
 
+      const password = String(values.password || "").trim();
       const res = await updateUserAPI(editingRow.User_Id, {
         user_name: String(values.user_name).trim(),
         short_name: String(values.short_name).trim(),
         user_code: String(values.user_code).trim(),
+        ...(password ? { password } : {}),
       });
 
       if (res?.Error_Code === 0) {

@@ -33,4 +33,5 @@ export type AppUserUpdatePayload = {
   user_name: string;
   short_name: string;
   user_code: string;
+  password?: string;
 };

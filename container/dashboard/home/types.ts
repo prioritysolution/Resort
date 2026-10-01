@@ -14,10 +14,24 @@ export type CashTrendPoint = {
   amount: number;
 };
 
+export type DashboardToday = {
+  occupied_rooms: number;
+  vacant_rooms: number;
+  total_rooms: number;
+  in_house: number;
+  in_house_guests: number;
+  food_orders: number;
+  food_amount: number;
+  collection: number;
+  arrivals: unknown[];
+  departures: unknown[];
+};
+
 export type DashboardDetails = {
   stats: DashboardStats | null;
   cashTrend: CashTrendPoint[];
-  activity: unknown[];
+  activity?: unknown[];
+  today?: DashboardToday | null;
 };
 
 export type DashboardApiResponse = {
@@ -29,6 +43,7 @@ export type DashboardState = {
   stats: DashboardStats | null;
   activity: unknown[];
   cashTrend: CashTrendPoint[];
+  today: DashboardToday | null;
   loading: boolean;
 };
 
@@ -36,4 +51,5 @@ export type DashboardDataPayload = {
   stats?: DashboardStats | null;
   activity?: unknown[];
   cashTrend?: CashTrendPoint[];
+  today?: DashboardToday | null;
 };

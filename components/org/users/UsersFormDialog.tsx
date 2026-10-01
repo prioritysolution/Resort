@@ -48,7 +48,7 @@ const UsersFormDialog = ({
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update name and user code. Password cannot be changed here."
+              ? "Update name, user code, and password."
               : "Create a user for the current organisation and branch."}
           </DialogDescription>
         </DialogHeader>
@@ -67,7 +67,7 @@ const UsersFormDialog = ({
                 label="User name"
                 placeholder="Sourav Mondal"
                 isRequired
-                maxLength={100}
+                // maxLength={100}
                 className="sm:col-span-2"
               />
               <InputField
@@ -76,7 +76,7 @@ const UsersFormDialog = ({
                 label="Short name"
                 placeholder="Sourav"
                 isRequired
-                maxLength={25}
+                // maxLength={25}
               />
               <InputField
                 control={form.control}
@@ -84,19 +84,17 @@ const UsersFormDialog = ({
                 label="User code"
                 placeholder="0112"
                 isRequired
-                maxLength={25}
+                // maxLength={25}
               />
-              {!isEdit ? (
-                <InputField
-                  control={form.control}
-                  name="password"
-                  label="Password"
-                  type="password"
-                  placeholder="Min 6 characters"
-                  isRequired
-                  className="sm:col-span-2"
-                />
-              ) : null}
+              <InputField
+                control={form.control}
+                name="password"
+                label="Password"
+                type="password"
+                placeholder="Min 6 characters"
+                isRequired={!isEdit}
+                className="sm:col-span-2"
+              />
             </div>
 
             <DialogFooter className="gap-2 sm:gap-2">

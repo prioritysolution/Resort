@@ -5,6 +5,7 @@ const initialState: DashboardState = {
   stats: null,
   activity: [],
   cashTrend: [],
+  today: null,
   loading: false,
 };
 
@@ -19,6 +20,7 @@ const dashboardSlice = createSlice({
       state.stats = action.payload.stats ?? null;
       state.activity = action.payload.activity || [];
       state.cashTrend = action.payload.cashTrend || [];
+      state.today = action.payload.today ?? null;
     },
   },
 });

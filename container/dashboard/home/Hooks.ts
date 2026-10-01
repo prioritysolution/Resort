@@ -16,7 +16,7 @@ type RootSlice = {
 
 export const useDashboardHome = () => {
   const dispatch = useDispatch();
-  const { stats, activity, cashTrend, loading } = useSelector(
+  const { stats, activity, cashTrend, today, loading } = useSelector(
     (state: RootSlice) => state.dashboard,
   );
   const [userName, setUserName] = useState("there");
@@ -52,6 +52,7 @@ export const useDashboardHome = () => {
     stats,
     activity,
     cashTrend,
+    today,
     loading,
     userName,
     orgName,

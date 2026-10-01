@@ -21,7 +21,7 @@ import {
   PageShell,
   PageShellContent,
 } from "@/components/shared";
-import type { CashTrendPoint, DashboardStats } from "@/container/dashboard/home/types";
+import type { CashTrendPoint, DashboardStats, DashboardToday } from "@/container/dashboard/home/types";
 
 type KpiMeta = {
   key: string;
@@ -70,6 +70,7 @@ const KPI_META: KpiMeta[] = [
 type DashboardHomeViewProps = {
   stats: DashboardStats | null;
   cashTrend: CashTrendPoint[];
+  today: DashboardToday | null;
   loading: boolean;
   userName: string;
   orgName: string;
@@ -78,6 +79,7 @@ type DashboardHomeViewProps = {
 const DashboardHomeView = ({
   stats,
   cashTrend,
+  today: todayData,
   loading,
   userName,
   orgName,
@@ -201,9 +203,32 @@ const DashboardHomeView = ({
             title="Today at the hotel"
             headerClassName="sm:justify-center"
           >
-            <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
-              Live hotel summary will appear here when the API is available.
-            </div>
+            {loading && !todayData ? (
+              <PageLoader variant="section" className="!min-h-40" />
+            ) : todayData ? (
+              <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                <div className="flex flex-col gap-1 rounded-lg border p-4 bg-card text-card-foreground shadow-sm">
+                  <span className="text-muted-foreground">Occupied Rooms</span>
+                  <span className="font-semibold text-2xl">{todayData.occupied_rooms}</span>
+                </div>
+                <div className="flex flex-col gap-1 rounded-lg border p-4 bg-card text-card-foreground shadow-sm">
+                  <span className="text-muted-foreground">Vacant Rooms</span>
+                  <span className="font-semibold text-2xl">{todayData.vacant_rooms}</span>
+                </div>
+                <div className="flex flex-col gap-1 rounded-lg border p-4 bg-card text-card-foreground shadow-sm">
+                  <span className="text-muted-foreground">Total Rooms</span>
+                  <span className="font-semibold text-2xl">{todayData.total_rooms}</span>
+                </div>
+                <div className="flex flex-col gap-1 rounded-lg border p-4 bg-card text-card-foreground shadow-sm">
+                  <span className="text-muted-foreground">In House Guests</span>
+                  <span className="font-semibold text-2xl">{todayData.in_house_guests}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
+                No data available.
+              </div>
+            )}
           </PageSection>
         </div>
       </PageShellContent>

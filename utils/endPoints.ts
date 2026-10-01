@@ -1,6 +1,9 @@
 const createApi = process.env.NEXT_PUBLIC_BASE_API_URL || "";
 
 export const endPoints = {
+  // Dashboard
+  dashboard: `${createApi}/dashboard`,
+
   // Auth — Resort API
   login: `${createApi}/login`,
   menus: `${createApi}/menus`,
